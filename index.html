@@ -175,6 +175,30 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
 .dch .dot { stroke: #fff; stroke-width: 3; }
 .dash-legend { font-size: 16px; }
 .dash-legend .sw { width: 18px; height: 18px; border-radius: 50%; border: 3px solid var(--ink); vertical-align: -3px; }
+
+/* Celular */
+.tick, .val { font-size: 12px; }
+.dch .tick { font-size: 13px; }
+.credit { transform: none; margin: 30px 4px 0; }
+.pin.b { bottom: -16px; left: -10px; }
+@media (max-width: 520px) {
+  body { font-size: 16px; }
+  .mod { border-radius: 28px; box-shadow: 6px 6px 0 var(--pink-deep); padding: 18px 14px; }
+  .head h2 { font-size: 2.4rem; }
+  .head svg { width: 52px; height: 52px; }
+  .row { padding: 10px; }
+  .dch { border-radius: 24px; padding: 14px 10px; }
+  .dch .ln { stroke-width: 3.5; }
+  .chart { padding: 10px 6px; border-radius: 20px; }
+  .go { min-height: 0; gap: 18px; }
+  .add-att, .rm-att { min-height: 40px; }
+  .rm { width: 40px; height: 40px; }
+  .row { grid-template-columns: 1fr 40px; }
+  .nav a { padding: 8px 16px; }
+}
+
+.credit { transform: rotate(-2.5deg); margin: 26px 4px 0; }
+.pin.b { bottom: 68px; left: -12px; }
 </style>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -440,7 +464,7 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
         e.textContent = 'Escribe un tiempo y aparece la gráfica ✦'; chartEl.appendChild(e);
         statsEl.textContent = ''; return;
       }
-      var W = 640, H = 310, L = 44, R = 12, T = 24, B = 40;
+      var W = Math.max(280, Math.round(chartEl.clientWidth || 640)), H = W < 480 ? 280 : 310, L = 44, R = 12, T = 24, B = 40;
       var max = Math.max.apply(null, all);
       var step = max <= 60 ? 10 : max <= 300 ? 30 : max <= 900 ? 60 : 300;
       var top = Math.ceil(max / step) * step || step;
@@ -451,7 +475,7 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
         svg.appendChild(ns('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), 'class': 'axis' }));
         svg.appendChild(ns('text', { x: L - 6, y: y(v) + 4, 'text-anchor': 'end', 'class': 'tick' }, fmt(v)));
       }
-      var every = cntp > 16 ? 2 : 1;
+      var every = Math.max(1, Math.ceil(34 / slot));
       flat.forEach(function (p, i) {
         if (i % every) return;
         svg.appendChild(ns('text', { x: L + slot * (i + 0.5), y: H - 20, 'text-anchor': 'middle', 'class': 'tick' }, (p.n + 1) + '.' + (p.m + 1)));
@@ -464,8 +488,8 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
         });
         if (pts.length > 1) svg.appendChild(ns('polyline', { points: pts.map(function (q) { return q.x + ',' + q.y; }).join(' '), 'class': 'ln l' + fi }));
         pts.forEach(function (q) {
-          svg.appendChild(ns('circle', { cx: q.x, cy: q.y, r: 5, 'class': 'dot b' + fi }));
-          if (cntp <= 8) svg.appendChild(ns('text', { x: q.x, y: q.y - 10, 'text-anchor': 'middle', 'class': 'val' }, fmt(q.t)));
+          svg.appendChild(ns('circle', { cx: q.x, cy: q.y, r: W < 480 ? 4 : 5, 'class': 'dot b' + fi }));
+          if (slot >= 44) svg.appendChild(ns('text', { x: q.x, y: q.y - 10, 'text-anchor': 'middle', 'class': 'val' }, fmt(q.t)));
         });
       });
       svg.appendChild(ns('text', { x: W / 2, y: H - 4, 'text-anchor': 'middle', 'class': 'tick' }, 'día . intento'));
@@ -482,6 +506,7 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
     mod.querySelector('.add').addEventListener('click', function () { list.push(newDay()); focusId = idOf(list.length - 1, 0, 'c'); save(); drawRows(); drawChart(); });
     REG[mod.dataset.key] = {
       list: function () { return list; },
+      redraw: function () { drawChart(); },
       addDay: function (v) {
         var idx = -1;
         for (var i = 0; i < list.length; i++) {
@@ -513,7 +538,7 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
     var vals = [];
     series.forEach(function (s) { s.pts.forEach(function (p) { vals.push(p.y); }); });
     if (!vals.length) { var e = document.createElement('div'); e.className = 'empty'; e.textContent = 'Aún no hay tiempos de ' + label.toLowerCase() + '.'; box.appendChild(e); return; }
-    var W = 960, H = 460, L = 56, R = 20, T = 24, B = 44;
+    var W = Math.max(280, Math.round(box.clientWidth || 960)), H = Math.min(460, Math.max(240, Math.round(W * 0.5))), L = 50, R = 16, T = 20, B = 40;
     var max = Math.max.apply(null, vals);
     var step = max <= 60 ? 10 : max <= 300 ? 30 : max <= 900 ? 60 : 300;
     var top = Math.ceil(max / step) * step || step;
@@ -525,12 +550,12 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
       svg.appendChild(ns('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), 'class': 'axis' }));
       svg.appendChild(ns('text', { x: L - 6, y: y(v) + 4, 'text-anchor': 'end', 'class': 'tick' }, fmt(v)));
     }
-    var every = n > 14 ? 2 : 1;
+    var every = Math.max(1, Math.ceil(30 / slot));
     for (var d = 1; d <= n; d += every) svg.appendChild(ns('text', { x: xs(d), y: H - 14, 'text-anchor': 'middle', 'class': 'tick' }, String(d)));
     svg.appendChild(ns('text', { x: W - R, y: H - 2, 'text-anchor': 'end', 'class': 'tick' }, 'día'));
     series.forEach(function (s) {
       if (s.pts.length > 1) svg.appendChild(ns('polyline', { points: s.pts.map(function (p) { return xs(p.x) + ',' + y(p.y); }).join(' '), 'class': 'ln', style: 'stroke:' + s.c }));
-      s.pts.forEach(function (p) { svg.appendChild(ns('circle', { cx: xs(p.x), cy: y(p.y), r: 7, 'class': 'dot', style: 'fill:' + s.c })); });
+      s.pts.forEach(function (p) { svg.appendChild(ns('circle', { cx: xs(p.x), cy: y(p.y), r: W < 480 ? 5 : 7, 'class': 'dot', style: 'fill:' + s.c })); });
     });
     box.appendChild(svg);
   }
@@ -574,6 +599,15 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
     });
   })();
 
+  var rz = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(rz);
+    rz = setTimeout(function () {
+      Object.keys(REG).forEach(function (k) { REG[k].redraw(); });
+      drawDash();
+    }, 150);
+  });
+
   // ---- Foto de portada ----
   var photo = document.getElementById('photo');
   if (photo) {
@@ -609,6 +643,7 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
     views.forEach(function (v) { v.hidden = v.dataset.view !== h; });
     links.forEach(function (a) { if (a.dataset.link === h) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     if (h === 'dashboard') drawDash();
+    if (REG[h]) REG[h].redraw();
     window.scrollTo(0, 0);
   }
   window.addEventListener('hashchange', route);
