@@ -165,6 +165,16 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
 .dch .empty { padding: 40px 12px; text-align: center; font-weight: 700; opacity: .75; }
 .dash-legend { display: flex; gap: 8px 20px; flex-wrap: wrap; font-weight: 700; font-size: 14px; }
 .go.dashb { grid-column: 1 / -1; background: var(--cream); color: var(--ink); min-height: 140px; }
+
+/* Dashboard: solo gráficas, grandes */
+.dash-charts { grid-template-columns: 1fr; gap: clamp(20px, 3vw, 32px); }
+.dch { padding: clamp(16px, 3vw, 28px); }
+.dch h3 { font-size: clamp(1.6rem, 4vw, 2.2rem); margin-bottom: 12px; }
+.dch .tick { font-size: 15px; }
+.dch .ln { stroke-width: 4.5; }
+.dch .dot { stroke: #fff; stroke-width: 3; }
+.dash-legend { font-size: 16px; }
+.dash-legend .sw { width: 18px; height: 18px; border-radius: 50%; border: 3px solid var(--ink); vertical-align: -3px; }
 </style>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -211,7 +221,7 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
     <a class="go negro" href="#tatai"><h2>Tatai</h2><p>Sus días, intentos y tiempos, con gráfica.</p><span class="arrow">Entrar →</span></a>
     <a class="go rojo" href="#papa"><h2>Papá</h2><p>Sus días, intentos y tiempos, con gráfica.</p><span class="arrow">Entrar →</span></a>
     <a class="go negro" href="#mama"><h2>Mamá</h2><p>Sus días, intentos y tiempos, con gráfica.</p><span class="arrow">Entrar →</span></a>
-    <a class="go dashb" href="#dashboard"><h2>Dashboard</h2><p>El progreso de todos juntos, y agregar días desde aquí.</p><span class="arrow">Ver →</span></a>
+    <a class="go dashb" href="#dashboard"><h2>Dashboard</h2><p>El progreso de todos juntos, en grande.</p><span class="arrow">Ver →</span></a>
   </div>
 </main>
 </div>
@@ -219,27 +229,14 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
   <div class="wrap dash">
     <div class="dhead">
       <svg class="sticker" width="56" height="56" aria-hidden="true"><use href="#star"/></svg>
-      <h2>Dashboard</h2><span class="dtotal" id="dash-total"></span>
+      <h2>Dashboard</h2>
     </div>
-    <div class="dash-cards" id="dash-cards"></div>
-    <section class="dash-add" aria-labelledby="h-dadd">
-      <h3 id="h-dadd">Agregar día</h3>
-      <div class="dform">
-        <label>Persona<select id="dash-person"><option value="tadeo">Tadeo</option><option value="tatai">Tatai</option><option value="papa">Papá</option><option value="mama">Mamá</option></select></label>
-        <label>Tiempo caballo<input id="dash-c" type="text" inputmode="decimal" placeholder="0:00"></label>
-        <label>Tiempo colgado<input id="dash-g" type="text" inputmode="decimal" placeholder="0:00"></label>
-        <label>Tiempo en plancha<input id="dash-p" type="text" inputmode="decimal" placeholder="0:00"></label>
-        <button id="dash-add" type="button">Agregar día</button>
-      </div>
-      <p class="dmsg" id="dash-msg" role="status" aria-live="polite"></p>
-      <p class="dnote">Segundos (90) o minutos:segundos (1:30). Se guarda como el siguiente día de esa persona; los intentos extra se agregan desde su página.</p>
-    </section>
+    <div class="dash-legend" id="dash-legend"></div>
     <div class="dash-charts">
       <section class="dch"><h3>Caballo</h3><div id="dash-ch-c"></div></section>
       <section class="dch"><h3>Colgado</h3><div id="dash-ch-g"></div></section>
       <section class="dch"><h3>Plancha</h3><div id="dash-ch-p"></div></section>
     </div>
-    <div class="dash-legend" id="dash-legend"></div>
   </div>
 </main>
 <main class="page" data-view="tadeo" hidden>
@@ -516,7 +513,7 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
     var vals = [];
     series.forEach(function (s) { s.pts.forEach(function (p) { vals.push(p.y); }); });
     if (!vals.length) { var e = document.createElement('div'); e.className = 'empty'; e.textContent = 'Aún no hay tiempos de ' + label.toLowerCase() + '.'; box.appendChild(e); return; }
-    var W = 520, H = 260, L = 44, R = 14, T = 18, B = 34;
+    var W = 960, H = 460, L = 56, R = 20, T = 24, B = 44;
     var max = Math.max.apply(null, vals);
     var step = max <= 60 ? 10 : max <= 300 ? 30 : max <= 900 ? 60 : 300;
     var top = Math.ceil(max / step) * step || step;
@@ -533,12 +530,12 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
     svg.appendChild(ns('text', { x: W - R, y: H - 2, 'text-anchor': 'end', 'class': 'tick' }, 'día'));
     series.forEach(function (s) {
       if (s.pts.length > 1) svg.appendChild(ns('polyline', { points: s.pts.map(function (p) { return xs(p.x) + ',' + y(p.y); }).join(' '), 'class': 'ln', style: 'stroke:' + s.c }));
-      s.pts.forEach(function (p) { svg.appendChild(ns('circle', { cx: xs(p.x), cy: y(p.y), r: 5, 'class': 'dot', style: 'fill:' + s.c })); });
+      s.pts.forEach(function (p) { svg.appendChild(ns('circle', { cx: xs(p.x), cy: y(p.y), r: 7, 'class': 'dot', style: 'fill:' + s.c })); });
     });
     box.appendChild(svg);
   }
   var drawDash = function () {
-    var cards = el('dash-cards'); if (!cards) return;
+    var cards = el('dash-cards'); if (!el('dash-legend')) return;
     var totalDays = 0, totalAtt = 0, maxDays = 1, html = '';
     ORDER.forEach(function (p) {
       var r = REG[p.k]; if (!r) return;
@@ -552,8 +549,7 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
         '<span class="dmeta">' + plural(list.length, 'día', 'días') + ' · ' + plural(att, 'intento', 'intentos') + (last ? ' · último con tiempos: día ' + last : ' · sin tiempos todavía') + '</span>' +
         '<span class="dbest">' + EX.map(function (ex) { return '<span><b>' + (best[ex.k] == null ? '–' : fmt(best[ex.k])) + '</b>' + ex.name + '</span>'; }).join('') + '</span></a>';
     });
-    cards.innerHTML = html;
-    el('dash-total').textContent = plural(totalDays, 'día', 'días') + ' · ' + plural(totalAtt, 'intento', 'intentos');
+    if (cards) cards.innerHTML = html;
     el('dash-legend').innerHTML = ORDER.map(function (p) { return '<span><i class="sw" style="background:' + p.c + '"></i>' + p.n + '</span>'; }).join('');
     EX.forEach(function (ex) {
       var series = ORDER.map(function (p) {
