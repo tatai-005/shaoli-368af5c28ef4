@@ -229,6 +229,30 @@ html:not(.locked) #login { display: none; }
 .voicebtn { margin-left: auto; }
 .voicebtn + .logout { margin-left: 0; }
 .voicebtn[aria-pressed="true"] { background: var(--ink); color: var(--cream); }
+
+/* Temporizador (modal) */
+.tm { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: rgba(28,19,22,.62); padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; }
+.tm-card { width: min(100%, 440px); background: var(--cream); color: var(--ink); border: 4px solid var(--ink); border-radius: 32px; box-shadow: 8px 8px 0 var(--red); padding: clamp(18px, 4vw, 28px); display: grid; gap: 12px; text-align: center; }
+.tm-kicker { margin: 0; font-family: var(--display); font-weight: 500; font-size: 14px; letter-spacing: .06em; opacity: .75; }
+.tm-card h2 { font-size: clamp(1.6rem, 6vw, 2.1rem); }
+.tm-time { font-family: var(--display); font-weight: 700; font-size: clamp(4.2rem, 22vw, 6.4rem); line-height: 1; font-variant-numeric: tabular-nums; }
+.tm.hit .tm-time { color: var(--red); }
+.tm-bar { height: 16px; background: #fff; border: 3px solid var(--ink); border-radius: 999px; overflow: hidden; }
+.tm-bar i { display: block; height: 100%; width: 0; background: var(--pink-deep); transition: width .2s linear; }
+.tm.hit .tm-bar i { background: var(--red); }
+.tm-sug { margin: 0; font-weight: 700; font-size: 14px; }
+.tm-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; font-weight: 700; font-size: 14px; }
+.tm-row input[type="text"], .tm-row select { background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 14px; padding: 8px 12px; font: inherit; font-weight: 700; font-size: 16px; width: 110px; text-align: center; }
+.tm-row select { width: auto; }
+.tm-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--red); vertical-align: -4px; margin-right: 6px; }
+.tm-row input:disabled { opacity: .6; }
+.tm-actions { display: grid; gap: 10px; margin-top: 4px; }
+.tm-actions button { border-radius: 999px; padding: 14px 18px; font-family: var(--display); font-weight: 600; font-size: 18px; cursor: pointer; min-height: 52px; }
+.tm-primary { background: var(--red); color: #fff; border: 0; box-shadow: 0 4px 0 #b3182b; }
+.tm-primary.stop { background: var(--ink); box-shadow: 0 4px 0 #000; }
+.tm-primary:active { transform: translateY(3px); box-shadow: none; }
+.tm-ghost { background: transparent; color: var(--ink); border: 3px solid var(--ink); }
+.tm-card button:focus-visible, .tm-card input:focus-visible, .tm-card select:focus-visible { outline: 3px solid var(--pink-deep); outline-offset: 2px; }
 </style>
 <script>
 (function () {
@@ -465,7 +489,7 @@ html:not(.locked) #login { display: none; }
   var REG = {};
 
   // ---- Voz (anuncia el tiempo) y cronómetro por campo ----
-  var voiceOn = store.get('shaoli:voice') === '1';
+  var voiceOn = store.get('shaoli:voice') !== '0';
   var canSpeak = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
   function speak(text) {
     if (!voiceOn || !canSpeak) return;
@@ -478,30 +502,114 @@ html:not(.locked) #login { display: none; }
     if (r || !m) out.push(r + (r === 1 ? ' segundo' : ' segundos'));
     return out.join(' con ');
   }
-  var SW = null;
-  function swStop() {
-    if (!SW) return;
-    var s = SW; SW = null; clearInterval(s.iv);
-    var el = (Date.now() - s.t0) / 1000;
-    s.btn.textContent = '▶ Iniciar'; s.btn.classList.remove('on');
-    s.btn.setAttribute('aria-label', 'Iniciar cronómetro');
-    s.att[s.k] = Math.round(el * 10) / 10;
-    s.inp.value = fmt(s.att[s.k]);
-    s.save(); s.redraw();
+  // ---- Temporizador en ventana (modal) ----
+  var TM = null, tmEl = null, tmLast = null;
+  var GOAL_DEF = { c: 60, g: 30, p: 60 };
+  function tmBuild() {
+    if (tmEl) return tmEl;
+    var d = document.createElement('div');
+    d.id = 'tm'; d.className = 'tm'; d.hidden = true;
+    d.innerHTML =
+      '<div class="tm-card" role="dialog" aria-modal="true" aria-labelledby="tm-title">' +
+        '<p class="tm-kicker" id="tm-kicker"></p>' +
+        '<h2 id="tm-title"></h2>' +
+        '<div class="tm-time" id="tm-time">0:00</div>' +
+        '<div class="tm-bar" aria-hidden="true"><i id="tm-fill"></i></div>' +
+        '<p class="tm-sug" id="tm-sug"></p>' +
+        '<div class="tm-row"><label for="tm-goal">Meta</label><input id="tm-goal" type="text" inputmode="decimal" placeholder="1:00" autocomplete="off"></div>' +
+        '<div class="tm-row tm-voice"><label><input id="tm-voice" type="checkbox"> Voz</label>' +
+          '<label for="tm-every">Contar cada</label>' +
+          '<select id="tm-every"><option value="0">no contar</option><option value="5">5 s</option><option value="10">10 s</option><option value="30">30 s</option></select></div>' +
+        '<div class="tm-actions"><button type="button" id="tm-go" class="tm-primary">Comenzar</button><button type="button" id="tm-cancel" class="tm-ghost">Cancelar</button></div>' +
+      '</div>';
+    document.body.appendChild(d);
+    tmEl = d;
+    var q = function (id) { return document.getElementById(id); };
+    q('tm-go').addEventListener('click', function () { if (!TM) return; if (TM.running) tmStop(); else tmBegin(); });
+    q('tm-cancel').addEventListener('click', function () { closeTimer(); });
+    q('tm-voice').addEventListener('change', function () {
+      voiceOn = q('tm-voice').checked; store.set('shaoli:voice', voiceOn ? '1' : '0');
+      var vb2 = document.getElementById('voice');
+      if (vb2) { vb2.textContent = 'Voz: ' + (voiceOn ? 'sí' : 'no'); vb2.setAttribute('aria-pressed', voiceOn ? 'true' : 'false'); }
+      if (voiceOn) speak('Voz activada'); else { try { window.speechSynthesis.cancel(); } catch (e) {} }
+    });
+    q('tm-every').addEventListener('change', function () { store.set('shaoli:every', q('tm-every').value); });
+    d.addEventListener('mousedown', function (ev) { if (ev.target === d && TM && !TM.running) closeTimer(); });
+    return d;
+  }
+  function tmKeys(ev) {
+    if (!TM) return;
+    if (ev.key === 'Escape' && !TM.running) { ev.preventDefault(); closeTimer(); return; }
+    if (ev.key !== 'Tab') return;
+    var f = [].slice.call(tmEl.querySelectorAll('button, input, select')).filter(function (x) { return !x.disabled; });
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+    else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+  }
+  function openTimer(ctx) {
+    tmBuild();
+    closeTimer();
+    var g = function (id) { return document.getElementById(id); };
+    ctx.running = false; ctx.said = 0; ctx.hit = false;
+    var goal = ctx.best != null ? Math.ceil(ctx.best * 11 / 50) * 5 : (GOAL_DEF[ctx.k] || 60);
+    if (ctx.best != null && goal <= ctx.best) goal += 5;
+    TM = ctx; tmLast = ctx.opener || null;
+    g('tm-kicker').textContent = ctx.who;
+    g('tm-title').textContent = ctx.label;
+    g('tm-time').textContent = '0:00';
+    g('tm-fill').style.width = '0%'; tmEl.classList.remove('hit');
+    g('tm-goal').value = fmt(goal);
+    g('tm-sug').textContent = ctx.best != null
+      ? 'Sugerencia: supera tu mejor marca (' + fmt(ctx.best) + ') y llega a ' + fmt(goal) + '.'
+      : 'Sugerencia para empezar: ' + fmt(goal) + '. Cambia la meta si quieres.';
+    g('tm-voice').checked = voiceOn;
+    g('tm-every').value = store.get('shaoli:every') || '10';
+    g('tm-go').textContent = 'Comenzar';
+    g('tm-go').classList.remove('stop');
+    tmEl.hidden = false;
+    document.addEventListener('keydown', tmKeys);
+    g('tm-go').focus();
+    speak('Iniciaste');
+  }
+  function tmBegin() {
+    var g = function (id) { return document.getElementById(id); };
+    TM.running = true; TM.t0 = Date.now();
+    g('tm-go').textContent = 'Parar y guardar'; g('tm-go').classList.add('stop');
+    g('tm-goal').disabled = true;
+    speak('Ya');
+    TM.iv = setInterval(function () {
+      if (!TM) return;
+      var el = (Date.now() - TM.t0) / 1000, goal = parse(g('tm-goal').value);
+      g('tm-time').textContent = fmt(el);
+      if (goal) {
+        g('tm-fill').style.width = Math.min(100, el / goal * 100) + '%';
+        if (!TM.hit && el >= goal) { TM.hit = true; tmEl.classList.add('hit'); speak('Llegaste a la meta'); }
+      }
+      var every = parseInt(g('tm-every').value, 10) || 0;
+      if (every) {
+        var n = Math.floor(el / every);
+        if (n > TM.said) { TM.said = n; if (!(TM.hit && Math.abs(el - goal) < 1)) speak(spoken(n * every)); }
+      }
+    }, 200);
+  }
+  function tmStop() {
+    var t = TM, el = (Date.now() - t.t0) / 1000;
+    t.att[t.k] = Math.round(el * 10) / 10;
+    if (t.inp) t.inp.value = fmt(t.att[t.k]);
+    t.save(); t.redraw();
+    closeTimer();
     speak('Tiempo: ' + spoken(el));
   }
-  function swStart(btn, inp, att, k, save, redraw) {
-    swStop();
-    SW = { btn: btn, inp: inp, att: att, k: k, save: save, redraw: redraw, t0: Date.now(), said: 0 };
-    btn.classList.add('on'); btn.textContent = '■ 0:00';
-    btn.setAttribute('aria-label', 'Parar cronómetro');
-    SW.iv = setInterval(function () {
-      var el = (Date.now() - SW.t0) / 1000;
-      btn.textContent = '■ ' + fmt(el); inp.value = fmt(el);
-      var tens = Math.floor(el / 10);
-      if (tens > SW.said) { SW.said = tens; speak(spoken(tens * 10)); }
-    }, 200);
-    speak('Ya');
+  function closeTimer() {
+    if (!TM) return;
+    clearInterval(TM.iv);
+    document.removeEventListener('keydown', tmKeys);
+    var g = document.getElementById('tm-goal'); if (g) g.disabled = false;
+    if (tmEl) tmEl.hidden = true;
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    var o = tmLast; TM = null; tmLast = null;
+    if (o && o.focus) { try { o.focus(); } catch (e) {} }
   }
   var EX = [{ k: 'c', name: 'Caballo', label: 'Tiempo caballo' }, { k: 'g', name: 'Colgado', label: 'Tiempo colgado' }, { k: 'p', name: 'Plancha', label: 'Tiempo en plancha' }];
   function blank() { return { c: null, g: null, p: null, x: null }; }
@@ -541,10 +649,15 @@ html:not(.locked) #login { display: none; }
         });
       } else list = [newDay(), newDay(), newDay()];
     }
+    function bestOf(k) {
+      var best = null;
+      list.forEach(function (day) { day.a.forEach(function (a, m) { var t = a[k]; if (t != null && (m === 0 || a.x === k) && (best == null || t > best)) best = t; }); });
+      return best;
+    }
     var focusId = null;
     var save = function () { store.set(key, JSON.stringify(list)); };
     var idOf = function (n, m, part) { return 'f-' + mod.dataset.key + '-' + n + '-' + m + '-' + part; };
-    function field(label, id, att, k, disabled) {
+    function field(label, id, att, k, disabled, who) {
       var lab = document.createElement('label'); lab.className = 'lab'; lab.textContent = label;
       var inp = document.createElement('input');
       inp.type = 'text'; inp.inputMode = 'decimal'; inp.placeholder = disabled ? 'Primero elige el ejercicio' : '0:00'; inp.id = id; lab.htmlFor = id;
@@ -556,9 +669,9 @@ html:not(.locked) #login { display: none; }
       wrap.appendChild(inp);
       if (!disabled) {
         var tb = document.createElement('button'); tb.type = 'button'; tb.className = 'tbtn'; tb.textContent = '▶ Iniciar';
-        tb.setAttribute('aria-label', 'Iniciar cronómetro');
+        tb.setAttribute('aria-label', 'Abrir temporizador de ' + label.toLowerCase());
         tb.addEventListener('click', function () {
-          if (SW && SW.btn === tb) swStop(); else swStart(tb, inp, att, k, save, drawChart);
+          openTimer({ who: who || name, label: label, k: k, att: att, inp: inp, save: save, redraw: drawChart, best: bestOf(k), opener: tb });
         });
         wrap.appendChild(tb);
       }
@@ -566,7 +679,7 @@ html:not(.locked) #login { display: none; }
     }
 
     var drawRows = function () {
-      swStop();
+      closeTimer();
       rowsEl.textContent = '';
       list.forEach(function (day, n) {
         var row = document.createElement('div'); row.className = 'row';
@@ -587,7 +700,7 @@ html:not(.locked) #login { display: none; }
           }
           box.appendChild(head);
           if (m === 0) {
-            EX.forEach(function (ex) { field(ex.label, idOf(n, m, ex.k), att, ex.k, false).forEach(function (el) { box.appendChild(el); }); });
+            EX.forEach(function (ex) { field(ex.label, idOf(n, m, ex.k), att, ex.k, false, name + ' · Día ' + (n + 1) + ' · Intento ' + (m + 1)).forEach(function (el) { box.appendChild(el); }); });
           } else {
             var l1 = document.createElement('label'); l1.className = 'lab'; l1.textContent = 'Ejercicio';
             var sel = document.createElement('select'); sel.id = idOf(n, m, 'e'); l1.htmlFor = sel.id;
@@ -602,7 +715,7 @@ html:not(.locked) #login { display: none; }
             });
             box.append(l1, sel);
             var ex = exIndex(att.x);
-            var parts = field(ex < 0 ? 'Tiempo' : EX[ex].label, idOf(n, m, 't'), att, att.x || 'c', ex < 0);
+            var parts = field(ex < 0 ? 'Tiempo' : EX[ex].label, idOf(n, m, 't'), att, att.x || 'c', ex < 0, name + ' · Día ' + (n + 1) + ' · Intento ' + (m + 1));
             parts.forEach(function (el) { box.appendChild(el); });
           }
           cell.appendChild(box);
@@ -818,7 +931,7 @@ html:not(.locked) #login { display: none; }
   function route() {
     var h = (location.hash || '#portada').slice(1);
     if (!views.some(function (v) { return v.dataset.view === h; })) h = 'portada';
-    swStop();
+    closeTimer();
     views.forEach(function (v) { v.hidden = v.dataset.view !== h; });
     links.forEach(function (a) { if (a.dataset.link === h) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     if (h === 'dashboard') drawDash();
