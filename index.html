@@ -257,6 +257,19 @@ html:not(.locked) #login { display: none; }
 .tm.count .tm-time { color: var(--red); transform: scale(1.12); }
 .tm-primary:disabled { opacity: .7; cursor: wait; }
 @media (prefers-reduced-motion: no-preference) { .tm-time { transition: transform .15s ease; } }
+
+/* Modal: siempre se puede salir, aunque la pantalla sea baja */
+.tm { display: flex; }
+.tm-card { margin: auto; position: relative; }
+.tm-x { position: absolute; top: 10px; right: 12px; width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--ink); background: #fff; color: var(--ink); font-size: 26px; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0 0 3px; }
+.tm-x:hover { background: var(--ink); color: var(--cream); }
+.tm-x:focus-visible { outline: 3px solid var(--pink-deep); outline-offset: 2px; }
+.tm-kicker { padding-inline: 48px; }
+@media (max-height: 640px) {
+  .tm-card { gap: 8px; padding: 16px; }
+  .tm-time { font-size: clamp(3rem, 16vw, 4.2rem); }
+  .tm-actions button { min-height: 44px; padding: 10px 16px; font-size: 16px; }
+}
 </style>
 <script>
 (function () {
@@ -515,6 +528,7 @@ html:not(.locked) #login { display: none; }
     d.id = 'tm'; d.className = 'tm'; d.hidden = true;
     d.innerHTML =
       '<div class="tm-card" role="dialog" aria-modal="true" aria-labelledby="tm-title">' +
+        '<button type="button" id="tm-x" class="tm-x" aria-label="Cerrar sin guardar">×</button>' +
         '<p class="tm-kicker" id="tm-kicker"></p>' +
         '<h2 id="tm-title"></h2>' +
         '<div class="tm-time" id="tm-time">0:00</div>' +
@@ -531,6 +545,7 @@ html:not(.locked) #login { display: none; }
     var q = function (id) { return document.getElementById(id); };
     q('tm-go').addEventListener('click', function () { if (!TM) return; if (TM.running) tmStop(); else tmBegin(); });
     q('tm-cancel').addEventListener('click', function () { closeTimer(); });
+    q('tm-x').addEventListener('click', function () { closeTimer(); });
     q('tm-voice').addEventListener('change', function () {
       voiceOn = q('tm-voice').checked; store.set('shaoli:voice', voiceOn ? '1' : '0');
       var vb2 = document.getElementById('voice');
@@ -543,7 +558,7 @@ html:not(.locked) #login { display: none; }
   }
   function tmKeys(ev) {
     if (!TM) return;
-    if (ev.key === 'Escape' && !TM.running) { ev.preventDefault(); closeTimer(); return; }
+    if (ev.key === 'Escape') { ev.preventDefault(); closeTimer(); return; }
     if (ev.key !== 'Tab') return;
     var f = [].slice.call(tmEl.querySelectorAll('button, input, select')).filter(function (x) { return !x.disabled; });
     if (!f.length) return;
