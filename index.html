@@ -132,6 +132,39 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
 .ln { fill: none; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
 .l0 { stroke: var(--s1); } .l1 { stroke: var(--s2); } .l2 { stroke: var(--s3); }
 .dot { stroke: var(--bg); stroke-width: 2; }
+
+/* Dashboard */
+.dash { padding-bottom: clamp(32px, 6vw, 64px); display: grid; gap: clamp(20px, 3vw, 32px); }
+.dash .dhead { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.dash h2 { font-size: clamp(2.4rem, 8vw, 4.4rem); }
+.dtotal { margin-left: auto; font-family: var(--display); font-weight: 500; background: var(--ink); color: var(--cream); border-radius: 999px; padding: 6px 16px; font-size: 14px; }
+.dash-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.dcard { display: grid; gap: 8px; text-decoration: none; color: var(--ink); background: var(--cream); border: 4px solid var(--ink); border-radius: 28px; padding: 18px; box-shadow: 6px 6px 0 var(--pc, var(--pink-deep)); }
+.dcard:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--pc); }
+.dcard:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+.dname { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; font-size: 1.7rem; line-height: 1; }
+.dsw { display: inline-block; width: 18px; height: 18px; border-radius: 50%; background: var(--pc); border: 3px solid var(--ink); }
+.dmeta { font-size: 13px; font-weight: 700; opacity: .8; }
+.dbest { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 4px; }
+.dbest span { display: grid; font-size: 12px; font-weight: 700; opacity: .9; }
+.dbest b { font-family: var(--display); font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.dash-add { background: var(--ink); color: var(--cream); border: 4px solid var(--ink); border-radius: 28px; padding: clamp(16px, 3vw, 28px); box-shadow: 6px 6px 0 var(--pink-deep); }
+.dash-add h3 { font-family: var(--display); font-size: 1.5rem; margin: 0 0 14px; }
+.dform { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end; }
+.dform label { display: grid; gap: 4px; font-weight: 700; font-size: 14px; }
+.dform input, .dform select { width: 100%; background: var(--cream); color: var(--ink); border: 2px solid transparent; border-radius: 14px; padding: 9px 12px; font: inherit; font-weight: 700; }
+.dform input:focus-visible, .dform select:focus-visible, .dform button:focus-visible { outline: 3px solid var(--pink-deep); outline-offset: 2px; }
+.dform button { background: var(--red); color: #fff; border: 0; border-radius: 999px; padding: 12px 18px; font-family: var(--display); font-weight: 600; font-size: 16px; cursor: pointer; box-shadow: 0 4px 0 #b3182b; }
+.dform button:active { transform: translateY(3px); box-shadow: 0 1px 0 #b3182b; }
+.dmsg { margin: 12px 0 0; font-weight: 700; min-height: 1.5em; }
+.dnote { margin: 4px 0 0; font-size: 13px; opacity: .8; }
+.dash-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.dch { background: #fff; color: var(--ink); border: 4px solid var(--ink); border-radius: 28px; padding: 16px; box-shadow: 6px 6px 0 var(--pink-deep); --fg: var(--ink); --line: rgba(28,19,22,.25); --bg: #fff; min-width: 0; }
+.dch h3 { font-family: var(--display); font-size: 1.4rem; margin: 0 0 8px; }
+.dch svg { display: block; width: 100%; height: auto; }
+.dch .empty { padding: 40px 12px; text-align: center; font-weight: 700; opacity: .75; }
+.dash-legend { display: flex; gap: 8px 20px; flex-wrap: wrap; font-weight: 700; font-size: 14px; }
+.go.dashb { grid-column: 1 / -1; background: var(--cream); color: var(--ink); min-height: 140px; }
 </style>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -146,7 +179,7 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
     </symbol>
   </defs>
 </svg>
-<nav class="wrap nav" aria-label="Páginas"><a href="#portada" data-link="portada">Portada</a><a href="#tadeo" data-link="tadeo">Tadeo</a><a href="#tatai" data-link="tatai">Tatai</a><a href="#papa" data-link="papa">Papá</a><a href="#mama" data-link="mama">Mamá</a></nav>
+<nav class="wrap nav" aria-label="Páginas"><a href="#portada" data-link="portada">Portada</a><a href="#dashboard" data-link="dashboard">Dashboard</a><a href="#tadeo" data-link="tadeo">Tadeo</a><a href="#tatai" data-link="tatai">Tatai</a><a href="#papa" data-link="papa">Papá</a><a href="#mama" data-link="mama">Mamá</a></nav>
 <div data-view="portada">
 <header class="cover">
   <div class="wrap">
@@ -178,9 +211,37 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
     <a class="go negro" href="#tatai"><h2>Tatai</h2><p>Sus días, intentos y tiempos, con gráfica.</p><span class="arrow">Entrar →</span></a>
     <a class="go rojo" href="#papa"><h2>Papá</h2><p>Sus días, intentos y tiempos, con gráfica.</p><span class="arrow">Entrar →</span></a>
     <a class="go negro" href="#mama"><h2>Mamá</h2><p>Sus días, intentos y tiempos, con gráfica.</p><span class="arrow">Entrar →</span></a>
+    <a class="go dashb" href="#dashboard"><h2>Dashboard</h2><p>El progreso de todos juntos, y agregar días desde aquí.</p><span class="arrow">Ver →</span></a>
   </div>
 </main>
 </div>
+<main class="page" data-view="dashboard" hidden>
+  <div class="wrap dash">
+    <div class="dhead">
+      <svg class="sticker" width="56" height="56" aria-hidden="true"><use href="#star"/></svg>
+      <h2>Dashboard</h2><span class="dtotal" id="dash-total"></span>
+    </div>
+    <div class="dash-cards" id="dash-cards"></div>
+    <section class="dash-add" aria-labelledby="h-dadd">
+      <h3 id="h-dadd">Agregar día</h3>
+      <div class="dform">
+        <label>Persona<select id="dash-person"><option value="tadeo">Tadeo</option><option value="tatai">Tatai</option><option value="papa">Papá</option><option value="mama">Mamá</option></select></label>
+        <label>Tiempo caballo<input id="dash-c" type="text" inputmode="decimal" placeholder="0:00"></label>
+        <label>Tiempo colgado<input id="dash-g" type="text" inputmode="decimal" placeholder="0:00"></label>
+        <label>Tiempo en plancha<input id="dash-p" type="text" inputmode="decimal" placeholder="0:00"></label>
+        <button id="dash-add" type="button">Agregar día</button>
+      </div>
+      <p class="dmsg" id="dash-msg" role="status" aria-live="polite"></p>
+      <p class="dnote">Segundos (90) o minutos:segundos (1:30). Se guarda como el siguiente día de esa persona; los intentos extra se agregan desde su página.</p>
+    </section>
+    <div class="dash-charts">
+      <section class="dch"><h3>Caballo</h3><div id="dash-ch-c"></div></section>
+      <section class="dch"><h3>Colgado</h3><div id="dash-ch-g"></div></section>
+      <section class="dch"><h3>Plancha</h3><div id="dash-ch-p"></div></section>
+    </div>
+    <div class="dash-legend" id="dash-legend"></div>
+  </div>
+</main>
 <main class="page" data-view="tadeo" hidden>
   <div class="wrap">
     <section class="mod rojo" data-key="tadeo" data-name="Tadeo" aria-labelledby="h-tadeo">
@@ -265,6 +326,7 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
     return el;
   }
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+  var REG = {};
   var EX = [{ k: 'c', name: 'Caballo', label: 'Tiempo caballo' }, { k: 'g', name: 'Colgado', label: 'Tiempo colgado' }, { k: 'p', name: 'Plancha', label: 'Tiempo en plancha' }];
   function blank() { return { c: null, g: null, p: null, x: null }; }
   function newDay() { return { a: [blank()] }; }
@@ -421,8 +483,100 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
     };
 
     mod.querySelector('.add').addEventListener('click', function () { list.push(newDay()); focusId = idOf(list.length - 1, 0, 'c'); save(); drawRows(); drawChart(); });
+    REG[mod.dataset.key] = {
+      list: function () { return list; },
+      addDay: function (v) {
+        var idx = -1;
+        for (var i = 0; i < list.length; i++) {
+          var d = list[i];
+          if (d.a.length === 1 && d.a[0].c == null && d.a[0].g == null && d.a[0].p == null) { idx = i; break; }
+        }
+        if (idx < 0) { list.push(newDay()); idx = list.length - 1; }
+        list[idx].a[0].c = v.c; list[idx].a[0].g = v.g; list[idx].a[0].p = v.p;
+        save(); drawRows(); drawChart();
+        return idx + 1;
+      }
+    };
     drawRows(); drawChart();
   });
+
+  // ---- Dashboard: progreso de todos y alta de días ----
+  var ORDER = [{ k: 'tadeo', n: 'Tadeo', c: '#ff3d52' }, { k: 'tatai', n: 'Tatai', c: '#1c1316' }, { k: 'papa', n: 'Papá', c: '#ff8fab' }, { k: 'mama', n: 'Mamá', c: '#e89b00' }];
+  function dayBest(day, ex) {
+    var best = null;
+    day.a.forEach(function (a, m) {
+      var t = a[ex.k]; if (t == null || (m > 0 && a.x !== ex.k)) return;
+      if (best == null || t > best) best = t;
+    });
+    return best;
+  }
+  function el(id) { return document.getElementById(id); }
+  function lineChart(box, series, maxX, label) {
+    box.textContent = '';
+    var vals = [];
+    series.forEach(function (s) { s.pts.forEach(function (p) { vals.push(p.y); }); });
+    if (!vals.length) { var e = document.createElement('div'); e.className = 'empty'; e.textContent = 'Aún no hay tiempos de ' + label.toLowerCase() + '.'; box.appendChild(e); return; }
+    var W = 520, H = 260, L = 44, R = 14, T = 18, B = 34;
+    var max = Math.max.apply(null, vals);
+    var step = max <= 60 ? 10 : max <= 300 ? 30 : max <= 900 ? 60 : 300;
+    var top = Math.ceil(max / step) * step || step;
+    var n = Math.max(maxX, 2), slot = (W - L - R) / n;
+    var y = function (v) { return T + (H - T - B) * (1 - v / top); };
+    var xs = function (d) { return L + slot * (d - 0.5); };
+    var svg = ns('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Progreso de ' + label.toLowerCase() + ' de todos' });
+    for (var v = 0; v <= top; v += step) {
+      svg.appendChild(ns('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), 'class': 'axis' }));
+      svg.appendChild(ns('text', { x: L - 6, y: y(v) + 4, 'text-anchor': 'end', 'class': 'tick' }, fmt(v)));
+    }
+    var every = n > 14 ? 2 : 1;
+    for (var d = 1; d <= n; d += every) svg.appendChild(ns('text', { x: xs(d), y: H - 14, 'text-anchor': 'middle', 'class': 'tick' }, String(d)));
+    svg.appendChild(ns('text', { x: W - R, y: H - 2, 'text-anchor': 'end', 'class': 'tick' }, 'día'));
+    series.forEach(function (s) {
+      if (s.pts.length > 1) svg.appendChild(ns('polyline', { points: s.pts.map(function (p) { return xs(p.x) + ',' + y(p.y); }).join(' '), 'class': 'ln', style: 'stroke:' + s.c }));
+      s.pts.forEach(function (p) { svg.appendChild(ns('circle', { cx: xs(p.x), cy: y(p.y), r: 5, 'class': 'dot', style: 'fill:' + s.c })); });
+    });
+    box.appendChild(svg);
+  }
+  var drawDash = function () {
+    var cards = el('dash-cards'); if (!cards) return;
+    var totalDays = 0, totalAtt = 0, maxDays = 1, html = '';
+    ORDER.forEach(function (p) {
+      var r = REG[p.k]; if (!r) return;
+      var list = r.list(), att = 0, last = 0, best = {};
+      list.forEach(function (day, i) {
+        att += day.a.length;
+        EX.forEach(function (ex) { var b = dayBest(day, ex); if (b != null) { last = i + 1; if (best[ex.k] == null || b > best[ex.k]) best[ex.k] = b; } });
+      });
+      totalDays += list.length; totalAtt += att; maxDays = Math.max(maxDays, list.length);
+      html += '<a class="dcard" href="#' + p.k + '" style="--pc:' + p.c + '"><span class="dname"><i class="dsw"></i>' + p.n + '</span>' +
+        '<span class="dmeta">' + plural(list.length, 'día', 'días') + ' · ' + plural(att, 'intento', 'intentos') + (last ? ' · último con tiempos: día ' + last : ' · sin tiempos todavía') + '</span>' +
+        '<span class="dbest">' + EX.map(function (ex) { return '<span><b>' + (best[ex.k] == null ? '–' : fmt(best[ex.k])) + '</b>' + ex.name + '</span>'; }).join('') + '</span></a>';
+    });
+    cards.innerHTML = html;
+    el('dash-total').textContent = plural(totalDays, 'día', 'días') + ' · ' + plural(totalAtt, 'intento', 'intentos');
+    el('dash-legend').innerHTML = ORDER.map(function (p) { return '<span><i class="sw" style="background:' + p.c + '"></i>' + p.n + '</span>'; }).join('');
+    EX.forEach(function (ex) {
+      var series = ORDER.map(function (p) {
+        var r = REG[p.k], pts = [];
+        if (r) r.list().forEach(function (day, i) { var b = dayBest(day, ex); if (b != null) pts.push({ x: i + 1, y: b }); });
+        return { c: p.c, pts: pts };
+      });
+      lineChart(el('dash-ch-' + ex.k), series, maxDays, ex.name);
+    });
+  };
+  (function () {
+    var add = el('dash-add'); if (!add) return;
+    add.addEventListener('click', function () {
+      var who = el('dash-person').value, r = REG[who], msg = el('dash-msg');
+      if (!r) return;
+      var v = { c: parse(el('dash-c').value), g: parse(el('dash-g').value), p: parse(el('dash-p').value) };
+      var day = r.addDay(v);
+      var pn = ORDER.filter(function (o) { return o.k === who; })[0].n;
+      msg.textContent = 'Día ' + day + ' guardado para ' + pn + '.';
+      ['dash-c', 'dash-g', 'dash-p'].forEach(function (id) { el(id).value = ''; });
+      drawDash();
+    });
+  })();
 
   // ---- Foto de portada ----
   var photo = document.getElementById('photo');
@@ -458,6 +612,7 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
     if (!views.some(function (v) { return v.dataset.view === h; })) h = 'portada';
     views.forEach(function (v) { v.hidden = v.dataset.view !== h; });
     links.forEach(function (a) { if (a.dataset.link === h) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    if (h === 'dashboard') drawDash();
     window.scrollTo(0, 0);
   }
   window.addEventListener('hashchange', route);
