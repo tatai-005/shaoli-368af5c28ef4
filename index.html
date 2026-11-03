@@ -253,6 +253,10 @@ html:not(.locked) #login { display: none; }
 .tm-primary:active { transform: translateY(3px); box-shadow: none; }
 .tm-ghost { background: transparent; color: var(--ink); border: 3px solid var(--ink); }
 .tm-card button:focus-visible, .tm-card input:focus-visible, .tm-card select:focus-visible { outline: 3px solid var(--pink-deep); outline-offset: 2px; }
+
+.tm.count .tm-time { color: var(--red); transform: scale(1.12); }
+.tm-primary:disabled { opacity: .7; cursor: wait; }
+@media (prefers-reduced-motion: no-preference) { .tm-time { transition: transform .15s ease; } }
 </style>
 <script>
 (function () {
@@ -566,6 +570,7 @@ html:not(.locked) #login { display: none; }
     g('tm-voice').checked = voiceOn;
     g('tm-every').value = store.get('shaoli:every') || '10';
     g('tm-go').textContent = 'Comenzar';
+    g('tm-go').disabled = false;
     g('tm-go').classList.remove('stop');
     tmEl.hidden = false;
     document.addEventListener('keydown', tmKeys);
@@ -574,9 +579,26 @@ html:not(.locked) #login { display: none; }
   }
   function tmBegin() {
     var g = function (id) { return document.getElementById(id); };
-    TM.running = true; TM.t0 = Date.now();
-    g('tm-go').textContent = 'Parar y guardar'; g('tm-go').classList.add('stop');
+    var t = TM, n = 3;
+    g('tm-go').disabled = true; g('tm-go').textContent = 'Prepárate…';
     g('tm-goal').disabled = true;
+    tmEl.classList.add('count');
+    var step = function () {
+      if (TM !== t) return;
+      if (n > 0) {
+        g('tm-time').textContent = String(n);
+        speak(['', 'Uno', 'Dos', 'Tres'][n]);
+        n--; t.cd = setTimeout(step, 1000);
+      } else { tmEl.classList.remove('count'); tmRun(); }
+    };
+    step();
+  }
+  function tmRun() {
+    var g = function (id) { return document.getElementById(id); };
+    TM.running = true; TM.t0 = Date.now();
+    g('tm-time').textContent = '0:00';
+    g('tm-go').disabled = false; g('tm-go').textContent = 'Parar y guardar'; g('tm-go').classList.add('stop');
+    g('tm-go').focus();
     speak('Ya');
     TM.iv = setInterval(function () {
       if (!TM) return;
@@ -603,7 +625,8 @@ html:not(.locked) #login { display: none; }
   }
   function closeTimer() {
     if (!TM) return;
-    clearInterval(TM.iv);
+    clearInterval(TM.iv); clearTimeout(TM.cd);
+    if (tmEl) tmEl.classList.remove('count');
     document.removeEventListener('keydown', tmKeys);
     var g = document.getElementById('tm-goal'); if (g) g.disabled = false;
     if (tmEl) tmEl.hidden = true;
