@@ -508,9 +508,19 @@ html:not(.locked) #login { display: none; }
   // ---- Voz (anuncia el tiempo) y cronómetro por campo ----
   var voiceOn = store.get('shaoli:voice') !== '0';
   var canSpeak = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
-  function speak(text) {
+  function speak(text, queue) {
     if (!voiceOn || !canSpeak) return;
-    try { var u = new SpeechSynthesisUtterance(text); u.lang = 'es-MX'; u.rate = 1; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } catch (e) {}
+    try {
+      var ss = window.speechSynthesis;
+      if (queue) { if (ss.speaking && ss.pending) return; } else ss.cancel();
+      var u = new SpeechSynthesisUtterance(text); u.lang = 'es-MX'; u.rate = 1.05;
+      ss.speak(u);
+    } catch (e) {}
+  }
+  function countWord(s) {
+    if (s < 60) return String(s);
+    if (s % 60 === 0) return (s / 60) + (s === 60 ? ' minuto' : ' minutos');
+    return String(s % 60);
   }
   function spoken(s) {
     s = Math.round(s);
@@ -536,8 +546,8 @@ html:not(.locked) #login { display: none; }
         '<p class="tm-sug" id="tm-sug"></p>' +
         '<div class="tm-row"><label for="tm-goal">Meta</label><input id="tm-goal" type="text" inputmode="decimal" placeholder="1:00" autocomplete="off"></div>' +
         '<div class="tm-row tm-voice"><label><input id="tm-voice" type="checkbox"> Voz</label>' +
-          '<label for="tm-every">Contar cada</label>' +
-          '<select id="tm-every"><option value="0">no contar</option><option value="5">5 s</option><option value="10">10 s</option><option value="30">30 s</option></select></div>' +
+          '<label for="tm-every">Contar</label>' +
+          '<select id="tm-every"><option value="0">no contar</option><option value="1">cada segundo</option><option value="5">cada 5 s</option><option value="10">cada 10 s</option><option value="30">cada 30 s</option></select></div>' +
         '<div class="tm-actions"><button type="button" id="tm-go" class="tm-primary">Comenzar</button><button type="button" id="tm-cancel" class="tm-ghost">Cancelar</button></div>' +
       '</div>';
     document.body.appendChild(d);
@@ -583,7 +593,7 @@ html:not(.locked) #login { display: none; }
       ? 'Sugerencia: supera tu mejor marca (' + fmt(ctx.best) + ') y llega a ' + fmt(goal) + '.'
       : 'Sugerencia para empezar: ' + fmt(goal) + '. Cambia la meta si quieres.';
     g('tm-voice').checked = voiceOn;
-    g('tm-every').value = store.get('shaoli:every') || '10';
+    g('tm-every').value = store.get('shaoli:every') || '1';
     g('tm-go').textContent = 'Comenzar';
     g('tm-go').disabled = false;
     g('tm-go').classList.remove('stop');
@@ -626,7 +636,7 @@ html:not(.locked) #login { display: none; }
       var every = parseInt(g('tm-every').value, 10) || 0;
       if (every) {
         var n = Math.floor(el / every);
-        if (n > TM.said) { TM.said = n; if (!(TM.hit && Math.abs(el - goal) < 1)) speak(spoken(n * every)); }
+        if (n > TM.said) { TM.said = n; speak(every === 1 ? countWord(n) : spoken(n * every), every === 1); }
       }
     }, 200);
   }
@@ -636,7 +646,7 @@ html:not(.locked) #login { display: none; }
     if (t.inp) t.inp.value = fmt(t.att[t.k]);
     t.save(); t.redraw();
     closeTimer();
-    speak('Tiempo: ' + spoken(el));
+    setTimeout(function () { speak('Tiempo: ' + spoken(el)); }, 80);
   }
   function closeTimer() {
     if (!TM) return;
