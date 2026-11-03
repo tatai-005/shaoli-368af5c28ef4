@@ -257,32 +257,57 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
     return el;
   }
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
-  var EX = [{ k: 'c', name: 'Caballo' }, { k: 'g', name: 'Colgado' }, { k: 'p', name: 'Plancha' }];
-  function blank() { return { e: null, t: null }; }
+  var EX = [{ k: 'c', name: 'Caballo', label: 'Tiempo caballo' }, { k: 'g', name: 'Colgado', label: 'Tiempo colgado' }, { k: 'p', name: 'Plancha', label: 'Tiempo en plancha' }];
+  function blank() { return { c: null, g: null, p: null, x: null }; }
   function newDay() { return { a: [blank()] }; }
   function exIndex(k) { for (var i = 0; i < EX.length; i++) if (EX[i].k === k) return i; return -1; }
 
-  // ---- Una vista por persona: días, y n intentos por día; cada intento es de un ejercicio ----
+  // ---- Una vista por persona. Intento 1: los tres tiempos. Intentos extra: se elige el ejercicio ----
   document.querySelectorAll('.mod').forEach(function (mod) {
-    var base = NS + mod.dataset.key, key = base + ':6', name = mod.dataset.name;
+    var base = NS + mod.dataset.key, key = base + ':7', name = mod.dataset.name;
     var rowsEl = mod.querySelector('.rows'), chartEl = mod.querySelector('.chart'), statsEl = mod.querySelector('.stats'), cnt = mod.querySelector('.cnt');
     var list = null;
-    try { list = JSON.parse(store.get(key)); } catch (e) { list = null; }
-    if (!Array.isArray(list) || !list.length) {
-      // lo capturado antes (tres tiempos por intento): cada tiempo pasa a ser un intento con su ejercicio
-      var old = null;
-      try { old = JSON.parse(store.get(base + ':5')); } catch (e) { old = null; }
-      if (Array.isArray(old) && old.length) {
-        list = old.map(function (d) {
-          var a = [];
-          (d.a || []).forEach(function (x) { EX.forEach(function (ex) { if (x[ex.k] != null) a.push({ e: ex.k, t: x[ex.k] }); }); });
-          return { a: a.length ? a : [blank()] };
+    function read(suffix) { try { var v = JSON.parse(store.get(base + suffix)); return Array.isArray(v) && v.length ? v : null; } catch (e) { return null; } }
+    list = read(':7');
+    if (!list) {
+      var o6 = read(':6'), o5 = read(':5');
+      if (o5) {
+        // tres tiempos por intento: el primero se queda igual, los demás se separan por ejercicio
+        list = o5.map(function (d) {
+          var src = d.a || [], out = [];
+          src.forEach(function (x, i) {
+            if (i === 0) { out.push({ c: x.c == null ? null : x.c, g: x.g == null ? null : x.g, p: x.p == null ? null : x.p, x: null }); return; }
+            var any = false;
+            EX.forEach(function (ex) { if (x[ex.k] != null) { any = true; var a = blank(); a.x = ex.k; a[ex.k] = x[ex.k]; out.push(a); } });
+            if (!any) out.push(blank());
+          });
+          return { a: out.length ? out : [blank()] };
+        });
+      } else if (o6) {
+        list = o6.map(function (d) {
+          var out = [];
+          (d.a || []).forEach(function (x, i) {
+            var a = blank();
+            if (i === 0) { if (x.e) a[x.e] = x.t; } else { a.x = x.e || null; if (x.e) a[x.e] = x.t; }
+            out.push(a);
+          });
+          return { a: out.length ? out : [blank()] };
         });
       } else list = [newDay(), newDay(), newDay()];
     }
     var focusId = null;
     var save = function () { store.set(key, JSON.stringify(list)); };
     var idOf = function (n, m, part) { return 'f-' + mod.dataset.key + '-' + n + '-' + m + '-' + part; };
+    function field(label, id, att, k, disabled) {
+      var lab = document.createElement('label'); lab.className = 'lab'; lab.textContent = label;
+      var inp = document.createElement('input');
+      inp.type = 'text'; inp.inputMode = 'decimal'; inp.placeholder = disabled ? 'Primero elige el ejercicio' : '0:00'; inp.id = id; lab.htmlFor = id;
+      inp.disabled = !!disabled;
+      inp.value = att[k] == null ? '' : fmt(att[k]);
+      inp.addEventListener('input', function () { att[k] = parse(inp.value); save(); drawChart(); });
+      inp.addEventListener('blur', function () { inp.value = att[k] == null ? '' : fmt(att[k]); });
+      return [lab, inp];
+    }
 
     var drawRows = function () {
       rowsEl.textContent = '';
@@ -297,35 +322,32 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
           var head = document.createElement('div'); head.className = 'att-head';
           var t = document.createElement('span'); t.className = 'att'; t.textContent = 'Intento ' + (m + 1);
           head.appendChild(t);
-          if (day.a.length > 1) {
+          if (m > 0) {
             var rma = document.createElement('button'); rma.type = 'button'; rma.className = 'rm-att'; rma.textContent = 'Quitar';
             rma.setAttribute('aria-label', 'Quitar intento ' + (m + 1) + ' del día ' + (n + 1) + ' de ' + name);
             rma.addEventListener('click', function () { day.a.splice(m, 1); save(); drawRows(); drawChart(); });
             head.appendChild(rma);
           }
           box.appendChild(head);
-
-          var l1 = document.createElement('label'); l1.className = 'lab'; l1.textContent = 'Ejercicio';
-          var sel = document.createElement('select'); sel.id = idOf(n, m, 'e'); l1.htmlFor = sel.id;
-          var ph = document.createElement('option'); ph.value = ''; ph.textContent = 'Elige un ejercicio'; sel.appendChild(ph);
-          EX.forEach(function (ex) { var o = document.createElement('option'); o.value = ex.k; o.textContent = ex.name; sel.appendChild(o); });
-          sel.value = att.e || '';
-
-          var l2 = document.createElement('label'); l2.className = 'lab';
-          var inp = document.createElement('input');
-          inp.type = 'text'; inp.inputMode = 'decimal'; inp.placeholder = '0:00'; inp.id = idOf(n, m, 't'); l2.htmlFor = inp.id;
-          var sync = function () {
-            var ex = exIndex(att.e);
-            l2.textContent = ex < 0 ? 'Tiempo' : 'Tiempo ' + EX[ex].name.toLowerCase();
-            inp.disabled = ex < 0;
-            inp.placeholder = ex < 0 ? 'Primero elige el ejercicio' : '0:00';
-          };
-          sync();
-          inp.value = att.t == null ? '' : fmt(att.t);
-          sel.addEventListener('change', function () { att.e = sel.value || null; sync(); save(); drawChart(); if (att.e) inp.focus(); });
-          inp.addEventListener('input', function () { att.t = parse(inp.value); save(); drawChart(); });
-          inp.addEventListener('blur', function () { inp.value = att.t == null ? '' : fmt(att.t); });
-          box.append(l1, sel, l2, inp);
+          if (m === 0) {
+            EX.forEach(function (ex) { field(ex.label, idOf(n, m, ex.k), att, ex.k, false).forEach(function (el) { box.appendChild(el); }); });
+          } else {
+            var l1 = document.createElement('label'); l1.className = 'lab'; l1.textContent = 'Ejercicio';
+            var sel = document.createElement('select'); sel.id = idOf(n, m, 'e'); l1.htmlFor = sel.id;
+            var ph = document.createElement('option'); ph.value = ''; ph.textContent = 'Elige un ejercicio'; sel.appendChild(ph);
+            EX.forEach(function (ex) { var o = document.createElement('option'); o.value = ex.k; o.textContent = ex.name; sel.appendChild(o); });
+            sel.value = att.x || '';
+            sel.addEventListener('change', function () {
+              var prev = att.x, v = sel.value || null;
+              if (prev && prev !== v) { if (v && att[v] == null) att[v] = att[prev]; att[prev] = null; }
+              att.x = v; save(); drawRows(); drawChart();
+              if (v) { var f = document.getElementById(idOf(n, m, 't')); if (f) f.focus(); }
+            });
+            box.append(l1, sel);
+            var ex = exIndex(att.x);
+            var parts = field(ex < 0 ? 'Tiempo' : EX[ex].label, idOf(n, m, 't'), att, att.x || 'c', ex < 0);
+            parts.forEach(function (el) { box.appendChild(el); });
+          }
           cell.appendChild(box);
         });
         var addAtt = document.createElement('button'); addAtt.type = 'button'; addAtt.className = 'add-att'; addAtt.textContent = '+ Otro intento';
@@ -344,17 +366,18 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
       var flat = [];
       list.forEach(function (day, n) { day.a.forEach(function (a, m) { flat.push({ n: n, m: m, a: a }); }); });
       cnt.textContent = plural(list.length, 'día', 'días') + ' · ' + plural(flat.length, 'intento', 'intentos');
-      var all = flat.filter(function (p) { return p.a.e && p.a.t != null; });
+      var all = [];
+      flat.forEach(function (p) { EX.forEach(function (ex) { if (p.a[ex.k] != null && (p.m === 0 || p.a.x === ex.k)) all.push(p.a[ex.k]); }); });
       if (!all.length) {
         var e = document.createElement('div'); e.className = 'empty';
-        e.textContent = 'Elige un ejercicio, escribe el tiempo y aparece la gráfica ✦'; chartEl.appendChild(e);
+        e.textContent = 'Escribe un tiempo y aparece la gráfica ✦'; chartEl.appendChild(e);
         statsEl.textContent = ''; return;
       }
       var W = 640, H = 310, L = 44, R = 12, T = 24, B = 40;
-      var max = Math.max.apply(null, all.map(function (p) { return p.a.t; }));
+      var max = Math.max.apply(null, all);
       var step = max <= 60 ? 10 : max <= 300 ? 30 : max <= 900 ? 60 : 300;
       var top = Math.ceil(max / step) * step || step;
-      var cntp = flat.length, slot = (W - L - R) / cntp, bw = Math.min(34, slot * 0.6);
+      var cntp = flat.length, slot = (W - L - R) / cntp, bw = Math.min(20, slot * 0.26);
       var y = function (v) { return T + (H - T - B) * (1 - v / top); };
       var svg = ns('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Gráfica de tiempos de ' + name });
       for (var v = 0; v <= top; v += step) {
@@ -364,22 +387,26 @@ main.page .wrap { padding-bottom: clamp(32px, 6vw, 64px); }
       flat.forEach(function (p, i) {
         var cx = L + slot * (i + 0.5);
         svg.appendChild(ns('text', { x: cx, y: H - 20, 'text-anchor': 'middle', 'class': 'tick' }, (p.n + 1) + '.' + (p.m + 1)));
-        if (!p.a.e || p.a.t == null) return;
-        var h = Math.max(2, y(0) - y(p.a.t));
-        svg.appendChild(ns('rect', { x: cx - bw / 2, y: y(0) - h, width: bw, height: h, rx: Math.min(8, bw / 2), 'class': 'b' + exIndex(p.a.e) }));
-        if (cntp <= 12) svg.appendChild(ns('text', { x: cx, y: y(0) - h - 5, 'text-anchor': 'middle', 'class': 'val' }, fmt(p.a.t)));
+        EX.forEach(function (ex, fi) {
+          var t = p.a[ex.k]; if (t == null || (p.m > 0 && p.a.x !== ex.k)) return;
+          var bx = cx + (fi - 1) * (bw + 2);
+          var h = Math.max(2, y(0) - y(t));
+          svg.appendChild(ns('rect', { x: bx - bw / 2, y: y(0) - h, width: bw, height: h, rx: Math.min(8, bw / 2), 'class': 'b' + fi }));
+          if (cntp <= 8) svg.appendChild(ns('text', { x: bx, y: y(0) - h - 5, 'text-anchor': 'middle', 'class': 'val' }, fmt(t)));
+        });
       });
       svg.appendChild(ns('text', { x: W / 2, y: H - 4, 'text-anchor': 'middle', 'class': 'tick' }, 'día . intento'));
       chartEl.appendChild(svg);
       statsEl.innerHTML = EX.map(function (ex, fi) {
-        var vals = all.filter(function (p) { return p.a.e === ex.k; }).map(function (p) { return p.a.t; });
+        var vals = [];
+        flat.forEach(function (p) { if (p.a[ex.k] != null && (p.m === 0 || p.a.x === ex.k)) vals.push(p.a[ex.k]); });
         if (!vals.length) return '';
         var avg = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
-        return '<span><i class="sw b' + fi + '"></i>' + ex.name + ' · ' + plural(vals.length, 'intento', 'intentos') + ' · mejor ' + fmt(Math.max.apply(null, vals)) + ' · promedio ' + fmt(avg) + '</span>';
+        return '<span><i class="sw b' + fi + '"></i>' + ex.name + ' · mejor ' + fmt(Math.max.apply(null, vals)) + ' · promedio ' + fmt(avg) + '</span>';
       }).join('');
     };
 
-    mod.querySelector('.add').addEventListener('click', function () { list.push(newDay()); focusId = idOf(list.length - 1, 0, 'e'); save(); drawRows(); drawChart(); });
+    mod.querySelector('.add').addEventListener('click', function () { list.push(newDay()); focusId = idOf(list.length - 1, 0, 'c'); save(); drawRows(); drawChart(); });
     drawRows(); drawChart();
   });
 
