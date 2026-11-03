@@ -218,6 +218,17 @@ html:not(.locked) #login { display: none; }
 .logout { margin-left: auto; font-family: var(--display); font-weight: 600; background: transparent; color: var(--ink); border: 3px solid var(--ink); border-radius: 999px; padding: 8px 18px; cursor: pointer; }
 .logout:hover { background: var(--ink); color: var(--cream); }
 .logout:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+
+/* Cronómetro y voz */
+.fieldrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; min-width: 0; }
+.tbtn { background: transparent; color: var(--fg); border: 2px solid var(--fg); border-radius: 999px; padding: 8px 12px; min-height: 42px; min-width: 96px; font-family: var(--display); font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tbtn:hover { background: rgba(255,255,255,.18); }
+.tbtn.on { background: var(--fg); color: var(--bg); }
+.tbtn:focus-visible { outline: 3px solid var(--pink-deep); outline-offset: 2px; }
+.mod.rojo .tbtn:focus-visible { outline-color: var(--ink); }
+.voicebtn { margin-left: auto; }
+.voicebtn + .logout { margin-left: 0; }
+.voicebtn[aria-pressed="true"] { background: var(--ink); color: var(--cream); }
 </style>
 <script>
 (function () {
@@ -272,6 +283,8 @@ html:not(.locked) #login { display: none; }
           try { localStorage.setItem(KEY, HASH); } catch (e) {}
           pw.value = ''; err.textContent = '';
           root.classList.remove('locked');
+          try { history.replaceState(null, '', '#portada'); } catch (e) { location.hash = 'portada'; }
+          window.dispatchEvent(new Event('hashchange'));
           window.scrollTo(0, 0);
           window.dispatchEvent(new Event('resize'));
         } else {
@@ -314,7 +327,7 @@ html:not(.locked) #login { display: none; }
   </form>
 </div>
 <div id="app">
-<nav class="wrap nav" aria-label="Páginas"><a href="#portada" data-link="portada">Portada</a><a href="#dashboard" data-link="dashboard">Dashboard</a><a href="#tadeo" data-link="tadeo">Tadeo</a><a href="#tatai" data-link="tatai">Tatai</a><a href="#papa" data-link="papa">Papá</a><a href="#mama" data-link="mama">Mamá</a><button id="logout" class="logout" type="button">Salir</button></nav>
+<nav class="wrap nav" aria-label="Páginas"><a href="#portada" data-link="portada">Portada</a><a href="#dashboard" data-link="dashboard">Dashboard</a><a href="#tadeo" data-link="tadeo">Tadeo</a><a href="#tatai" data-link="tatai">Tatai</a><a href="#papa" data-link="papa">Papá</a><a href="#mama" data-link="mama">Mamá</a><button id="voice" class="logout voicebtn" type="button" aria-pressed="false">Voz: no</button><button id="logout" class="logout" type="button">Salir</button></nav>
 <div data-view="portada">
 <header class="cover">
   <div class="wrap">
@@ -450,6 +463,46 @@ html:not(.locked) #login { display: none; }
   }
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
   var REG = {};
+
+  // ---- Voz (anuncia el tiempo) y cronómetro por campo ----
+  var voiceOn = store.get('shaoli:voice') === '1';
+  var canSpeak = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+  function speak(text) {
+    if (!voiceOn || !canSpeak) return;
+    try { var u = new SpeechSynthesisUtterance(text); u.lang = 'es-MX'; u.rate = 1; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } catch (e) {}
+  }
+  function spoken(s) {
+    s = Math.round(s);
+    var m = Math.floor(s / 60), r = s % 60, out = [];
+    if (m) out.push(m + (m === 1 ? ' minuto' : ' minutos'));
+    if (r || !m) out.push(r + (r === 1 ? ' segundo' : ' segundos'));
+    return out.join(' con ');
+  }
+  var SW = null;
+  function swStop() {
+    if (!SW) return;
+    var s = SW; SW = null; clearInterval(s.iv);
+    var el = (Date.now() - s.t0) / 1000;
+    s.btn.textContent = '▶ Iniciar'; s.btn.classList.remove('on');
+    s.btn.setAttribute('aria-label', 'Iniciar cronómetro');
+    s.att[s.k] = Math.round(el * 10) / 10;
+    s.inp.value = fmt(s.att[s.k]);
+    s.save(); s.redraw();
+    speak('Tiempo: ' + spoken(el));
+  }
+  function swStart(btn, inp, att, k, save, redraw) {
+    swStop();
+    SW = { btn: btn, inp: inp, att: att, k: k, save: save, redraw: redraw, t0: Date.now(), said: 0 };
+    btn.classList.add('on'); btn.textContent = '■ 0:00';
+    btn.setAttribute('aria-label', 'Parar cronómetro');
+    SW.iv = setInterval(function () {
+      var el = (Date.now() - SW.t0) / 1000;
+      btn.textContent = '■ ' + fmt(el); inp.value = fmt(el);
+      var tens = Math.floor(el / 10);
+      if (tens > SW.said) { SW.said = tens; speak(spoken(tens * 10)); }
+    }, 200);
+    speak('Ya');
+  }
   var EX = [{ k: 'c', name: 'Caballo', label: 'Tiempo caballo' }, { k: 'g', name: 'Colgado', label: 'Tiempo colgado' }, { k: 'p', name: 'Plancha', label: 'Tiempo en plancha' }];
   function blank() { return { c: null, g: null, p: null, x: null }; }
   function newDay() { return { a: [blank()] }; }
@@ -499,10 +552,21 @@ html:not(.locked) #login { display: none; }
       inp.value = att[k] == null ? '' : fmt(att[k]);
       inp.addEventListener('input', function () { att[k] = parse(inp.value); save(); drawChart(); });
       inp.addEventListener('blur', function () { inp.value = att[k] == null ? '' : fmt(att[k]); });
-      return [lab, inp];
+      var wrap = document.createElement('div'); wrap.className = 'fieldrow';
+      wrap.appendChild(inp);
+      if (!disabled) {
+        var tb = document.createElement('button'); tb.type = 'button'; tb.className = 'tbtn'; tb.textContent = '▶ Iniciar';
+        tb.setAttribute('aria-label', 'Iniciar cronómetro');
+        tb.addEventListener('click', function () {
+          if (SW && SW.btn === tb) swStop(); else swStart(tb, inp, att, k, save, drawChart);
+        });
+        wrap.appendChild(tb);
+      }
+      return [lab, wrap];
     }
 
     var drawRows = function () {
+      swStop();
       rowsEl.textContent = '';
       list.forEach(function (day, n) {
         var row = document.createElement('div'); row.className = 'row';
@@ -701,6 +765,18 @@ html:not(.locked) #login { display: none; }
     });
   })();
 
+  var vb = document.getElementById('voice');
+  if (vb) {
+    if (!canSpeak) vb.hidden = true;
+    else {
+      var refreshVoice = function () { vb.textContent = 'Voz: ' + (voiceOn ? 'sí' : 'no'); vb.setAttribute('aria-pressed', voiceOn ? 'true' : 'false'); };
+      refreshVoice();
+      vb.addEventListener('click', function () {
+        voiceOn = !voiceOn; store.set('shaoli:voice', voiceOn ? '1' : '0'); refreshVoice();
+        if (voiceOn) speak('Voz activada'); else { try { window.speechSynthesis.cancel(); } catch (e) {} }
+      });
+    }
+  }
   var rz = null;
   window.addEventListener('resize', function () {
     clearTimeout(rz);
@@ -742,6 +818,7 @@ html:not(.locked) #login { display: none; }
   function route() {
     var h = (location.hash || '#portada').slice(1);
     if (!views.some(function (v) { return v.dataset.view === h; })) h = 'portada';
+    swStop();
     views.forEach(function (v) { v.hidden = v.dataset.view !== h; });
     links.forEach(function (a) { if (a.dataset.link === h) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     if (h === 'dashboard') drawDash();
@@ -749,6 +826,7 @@ html:not(.locked) #login { display: none; }
     window.scrollTo(0, 0);
   }
   window.addEventListener('hashchange', route);
+  try { history.replaceState(null, '', '#portada'); } catch (e) { location.hash = 'portada'; }
   route();
 })();
 </script>
