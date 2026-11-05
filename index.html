@@ -330,6 +330,14 @@ html:not(.locked) #login { display: none; }
 }
 
 @media (max-width: 520px) { .rt td.rdate { border-right: 2px solid var(--ink); border-radius: 0 14px 14px 0; } }
+
+/* Encabezado del día: "Día 1  04-11-26" */
+.dayhead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.dateb { position: relative; display: inline-block; font-family: var(--display); font-weight: 600; font-size: 18px; border-bottom: 2px dashed var(--fg); padding: 0 2px 1px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.dateb:hover { background: rgba(255,255,255,.18); }
+.dateb:focus-within { outline: 3px solid var(--pink-deep); outline-offset: 3px; }
+.mod.rojo .dateb:focus-within { outline-color: var(--ink); }
+.row .dateb input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; opacity: 0; padding: 0; border: 0; cursor: pointer; }
 </style>
 <script>
 (function () {
@@ -576,7 +584,9 @@ html:not(.locked) #login { display: none; }
   }
   function todayStr() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function dateParts(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? { y: +m[1], m: +m[2], d: +m[3] } : null; }
-  function shortDate(s) { var p = dateParts(s); return p ? p.d + '/' + p.m : '–'; }
+  function two(n) { return ('0' + n).slice(-2); }
+  function shortDate(s) { var p = dateParts(s); return p ? two(p.d) + '-' + two(p.m) : '–'; }
+  function dashDate(s) { var p = dateParts(s); return p ? two(p.d) + '-' + two(p.m) + '-' + two(p.y % 100) : 'sin fecha'; }
   function longDate(s) {
     var p = dateParts(s); if (!p) return 'Sin fecha';
     try { return new Date(p.y, p.m - 1, p.d).toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return s; }
@@ -872,11 +882,22 @@ html:not(.locked) #login { display: none; }
         var row = document.createElement('div'); row.className = 'row';
         var cell = document.createElement('div'); cell.className = 'cell';
         var who = document.createElement('span'); who.className = 'who'; who.textContent = name;
-        var title = document.createElement('input'); title.type = 'date'; title.className = 'dateinp'; title.value = day.d;
-        title.id = idOf(n, 0, 'fecha');
-        title.setAttribute('aria-label', 'Fecha del registro ' + (n + 1) + ' de ' + name);
-        title.addEventListener('change', function () { day.d = dateParts(title.value) ? title.value : todayStr(); title.value = day.d; save(); drawChart(); });
-        cell.append(who, title);
+        var dayhead = document.createElement('div'); dayhead.className = 'dayhead';
+        var dn = document.createElement('span'); dn.className = 'day'; dn.textContent = 'Día ' + (n + 1);
+        var dlab = document.createElement('label'); dlab.className = 'dateb';
+        var dtxt = document.createElement('span'); dtxt.textContent = dashDate(day.d);
+        var di = document.createElement('input'); di.type = 'date'; di.value = day.d; di.id = idOf(n, 0, 'fecha');
+        di.setAttribute('aria-label', 'Fecha del día ' + (n + 1) + ' de ' + name + ': ' + dashDate(day.d) + '. Cambiar');
+        di.addEventListener('click', function () { try { di.showPicker(); } catch (e) {} });
+        di.addEventListener('change', function () {
+          day.d = dateParts(di.value) ? di.value : todayStr(); di.value = day.d;
+          dtxt.textContent = dashDate(day.d);
+          di.setAttribute('aria-label', 'Fecha del día ' + (n + 1) + ' de ' + name + ': ' + dashDate(day.d) + '. Cambiar');
+          save(); drawChart();
+        });
+        dlab.append(dtxt, di);
+        dayhead.append(dn, document.createTextNode(' '), dlab);
+        cell.append(who, dayhead);
         day.a.forEach(function (att, m) {
           var box = document.createElement('div'); box.className = 'att-box';
           var head = document.createElement('div'); head.className = 'att-head';
@@ -890,7 +911,7 @@ html:not(.locked) #login { display: none; }
           }
           box.appendChild(head);
           if (m === 0) {
-            EX.forEach(function (ex) { field(ex.label, idOf(n, m, ex.k), att, ex.k, false, function () { return name + ' · ' + longDate(day.d) + ' · Intento ' + (m + 1); }).forEach(function (el) { box.appendChild(el); }); });
+            EX.forEach(function (ex) { field(ex.label, idOf(n, m, ex.k), att, ex.k, false, function () { return name + ' · Día ' + (n + 1) + ' · ' + dashDate(day.d) + ' · Intento ' + (m + 1); }).forEach(function (el) { box.appendChild(el); }); });
           } else {
             var l1 = document.createElement('label'); l1.className = 'lab'; l1.textContent = 'Ejercicio';
             var sel = document.createElement('select'); sel.id = idOf(n, m, 'e'); l1.htmlFor = sel.id;
@@ -905,7 +926,7 @@ html:not(.locked) #login { display: none; }
             });
             box.append(l1, sel);
             var ex = exIndex(att.x);
-            var parts = field(ex < 0 ? 'Tiempo' : EX[ex].label, idOf(n, m, 't'), att, att.x || 'c', ex < 0, function () { return name + ' · ' + longDate(day.d) + ' · Intento ' + (m + 1); });
+            var parts = field(ex < 0 ? 'Tiempo' : EX[ex].label, idOf(n, m, 't'), att, att.x || 'c', ex < 0, function () { return name + ' · Día ' + (n + 1) + ' · ' + dashDate(day.d) + ' · Intento ' + (m + 1); });
             parts.forEach(function (el) { box.appendChild(el); });
           }
           cell.appendChild(box);
@@ -914,7 +935,7 @@ html:not(.locked) #login { display: none; }
         addAtt.addEventListener('click', function () { day.a.push(blank()); focusId = idOf(n, day.a.length - 1, 'e'); save(); drawRows(); drawChart(); });
         cell.appendChild(addAtt);
         var rm = document.createElement('button'); rm.className = 'rm'; rm.type = 'button'; rm.textContent = '×';
-        rm.setAttribute('aria-label', 'Quitar el registro del ' + longDate(day.d) + ' de ' + name);
+        rm.setAttribute('aria-label', 'Quitar el día ' + (n + 1) + ' (' + dashDate(day.d) + ') de ' + name);
         rm.addEventListener('click', function () { list.splice(n, 1); if (!list.length) list.push(newDay()); save(); drawRows(); drawChart(); });
         row.append(cell, rm); rowsEl.appendChild(row);
       });
@@ -961,7 +982,7 @@ html:not(.locked) #login { display: none; }
           if (slot >= 44) svg.appendChild(ns('text', { x: q.x, y: q.y - 10, 'text-anchor': 'middle', 'class': 'val' }, fmt(q.t)));
         });
       });
-      svg.appendChild(ns('text', { x: W / 2, y: H - 4, 'text-anchor': 'middle', 'class': 'tick' }, 'fecha (· número de intento)'));
+      svg.appendChild(ns('text', { x: W / 2, y: H - 4, 'text-anchor': 'middle', 'class': 'tick' }, 'fecha dd-mm (· número de intento)'));
       chartEl.appendChild(svg);
       statsEl.innerHTML = EX.map(function (ex, fi) {
         var vals = [];
@@ -1056,7 +1077,7 @@ html:not(.locked) #login { display: none; }
   };
   // ---- Ranking: gana quien hizo más tiempo ----
   var RANK_EX = [{ k: 'c', name: 'Caballo' }, { k: 'g', name: 'Colgado' }];
-  function fullShort(s) { var p = dateParts(s); return p ? p.d + '/' + p.m + '<span class="yy">/' + String(p.y).slice(-2) + '</span>' : '–'; }
+  function fullShort(s) { var p = dateParts(s); return p ? two(p.d) + '-' + two(p.m) + '<span class="yy">-' + two(p.y % 100) + '</span>' : '–'; }
   var drawRanking = function () {
     RANK_EX.forEach(function (ex) {
       var box = el('rank-' + ex.k); if (!box) return;
