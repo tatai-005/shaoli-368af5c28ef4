@@ -276,6 +276,60 @@ html:not(.locked) #login { display: none; }
 .row .dateinp { background: transparent; color: var(--fg); border: 0; border-bottom: 2px dashed var(--line); border-radius: 0; padding: 4px 0; min-height: 40px; font-family: var(--display); font-weight: 700; font-size: 20px; color-scheme: dark; width: 100%; }
 .row .dateinp:focus-visible { outline: 3px solid var(--pink-deep); outline-offset: 2px; }
 .mod.rojo .row .dateinp:focus-visible { outline-color: var(--ink); }
+
+/* Ranking */
+.rnote { margin: 0; font-weight: 700; }
+.rank-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: clamp(16px, 3vw, 28px); align-items: start; }
+.rank { background: #fff; color: var(--ink); border: 4px solid var(--ink); border-radius: 28px; padding: clamp(14px, 3vw, 24px); box-shadow: 6px 6px 0 var(--pink-deep); min-width: 0; }
+.rank h3 { font-family: var(--display); font-size: clamp(1.7rem, 5vw, 2.3rem); margin: 0 0 8px; }
+.rwin { margin: 0 0 12px; font-weight: 700; background: var(--pink); border: 3px solid var(--ink); border-radius: 18px; padding: 10px 14px; }
+.rwrap { overflow-x: auto; }
+.rt { width: 100%; border-collapse: separate; border-spacing: 0 6px; font-variant-numeric: tabular-nums; }
+.rt th { text-align: left; font-family: var(--display); font-weight: 500; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; opacity: .75; padding: 0 8px 2px; white-space: nowrap; }
+.rt td { padding: 10px 8px; background: var(--cream); border-block: 2px solid var(--ink); font-weight: 700; vertical-align: middle; }
+.rt td:first-child { border-left: 2px solid var(--ink); border-radius: 14px 0 0 14px; }
+.rt td:last-child { border-right: 2px solid var(--ink); border-radius: 0 14px 14px 0; }
+.rt tr.win td { background: #ffe38a; }
+.rp { font-family: var(--display); font-size: 1.3rem; white-space: nowrap; width: 1%; }
+.rp .crown { display: inline-block; vertical-align: -5px; margin-right: 4px; }
+.rname { white-space: nowrap; }
+.rname .dsw { width: 14px; height: 14px; margin-right: 8px; vertical-align: -1px; }
+.rt-time b { font-family: var(--display); font-size: 1.15rem; }
+.rbar { display: block; height: 6px; margin-top: 4px; background: var(--red); border-radius: 999px; min-width: 6px; }
+.rnone { opacity: .55; font-weight: 600; }
+.rdate, .rn { white-space: nowrap; }
+.rn { text-align: center; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 520px) { .rt th.rn, .rt td.rn { display: none; } .rank { padding: 14px 10px; } .rt td { padding: 9px 6px; } .rank-grid { grid-template-columns: 1fr; } }
+.go.dashb, .go.rankc { grid-column: auto; background: var(--cream); color: var(--ink); min-height: 140px; }
+
+.tm-test { background: transparent; color: var(--ink); border: 3px solid var(--ink); border-radius: 999px; padding: 6px 14px; font-family: var(--display); font-weight: 600; font-size: 14px; cursor: pointer; min-height: 40px; }
+.tm-test:focus-visible { outline: 3px solid var(--pink-deep); outline-offset: 2px; }
+.tm-hint { margin: 0; font-size: 12px; font-weight: 700; opacity: .8; }
+@media (max-width: 520px) {
+  .rt { font-size: 14px; }
+  .rt td { padding: 8px 4px; }
+  .rt th { padding: 0 4px 2px; font-size: 11px; }
+  .rname .dsw { margin-right: 5px; width: 12px; height: 12px; }
+  .rp { font-size: 1.1rem; }
+  .rp .crown { width: 18px; height: 18px; margin-right: 2px; }
+  .rt-time b { font-size: 1.05rem; }
+  .rwrap { padding-right: 2px; }
+}
+
+@media (max-width: 520px) { .rt .yy { display: none; } .rt td.rdate { padding-right: 8px; } }
+
+@media (max-width: 520px) { .rt .hm { display: none; } .rt td.rname { padding-right: 2px; } .rt td.rp { padding-right: 2px; } .rwrap { padding-right: 4px; } }
+
+@media (max-width: 520px) {
+  .rt { table-layout: fixed; width: 100%; }
+  .rt th:nth-child(1) { width: 17%; } .rt th:nth-child(2) { width: 29%; } .rt th:nth-child(3) { width: 30%; } .rt th:nth-child(4) { width: 24%; }
+  .rt td { overflow: hidden; text-overflow: ellipsis; }
+  .rt th { white-space: nowrap; overflow: hidden; }
+  .rwrap { padding-right: 0; overflow-x: hidden; }
+}
+
+@media (max-width: 520px) { .rt td.rdate { border-right: 2px solid var(--ink); border-radius: 0 14px 14px 0; } }
 </style>
 <script>
 (function () {
@@ -374,7 +428,7 @@ html:not(.locked) #login { display: none; }
   </form>
 </div>
 <div id="app">
-<nav class="wrap nav" aria-label="Páginas"><a href="#portada" data-link="portada">Portada</a><a href="#dashboard" data-link="dashboard">Dashboard</a><a href="#tadeo" data-link="tadeo">Tadeo</a><a href="#tatai" data-link="tatai">Tatai</a><a href="#papa" data-link="papa">Papá</a><a href="#mama" data-link="mama">Mamá</a><button id="voice" class="logout voicebtn" type="button" aria-pressed="false">Voz: no</button><button id="logout" class="logout" type="button">Salir</button></nav>
+<nav class="wrap nav" aria-label="Páginas"><a href="#portada" data-link="portada">Portada</a><a href="#dashboard" data-link="dashboard">Dashboard</a><a href="#ranking" data-link="ranking">Ranking</a><a href="#tadeo" data-link="tadeo">Tadeo</a><a href="#tatai" data-link="tatai">Tatai</a><a href="#papa" data-link="papa">Papá</a><a href="#mama" data-link="mama">Mamá</a><button id="voice" class="logout voicebtn" type="button" aria-pressed="false">Voz: no</button><button id="logout" class="logout" type="button">Salir</button></nav>
 <div data-view="portada">
 <header class="cover">
   <div class="wrap">
@@ -405,6 +459,7 @@ html:not(.locked) #login { display: none; }
     <a class="go rojo" href="#papa"><h2>Papá</h2><p>Sus días, intentos y tiempos, con gráfica.</p><span class="arrow">Entrar →</span></a>
     <a class="go negro" href="#mama"><h2>Mamá</h2><p>Sus días, intentos y tiempos, con gráfica.</p><span class="arrow">Entrar →</span></a>
     <a class="go dashb" href="#dashboard"><h2>Dashboard</h2><p>El progreso de todos juntos, en grande.</p><span class="arrow">Ver →</span></a>
+    <a class="go rankc" href="#ranking"><h2>Ranking</h2><p>Quién aguanta más en caballo y en colgado.</p><span class="arrow">Ver →</span></a>
   </div>
 </main>
 </div>
@@ -419,6 +474,19 @@ html:not(.locked) #login { display: none; }
       <section class="dch"><h3>Caballo</h3><div id="dash-ch-c"></div></section>
       <section class="dch"><h3>Colgado</h3><div id="dash-ch-g"></div></section>
       <section class="dch"><h3>Plancha</h3><div id="dash-ch-p"></div></section>
+    </div>
+  </div>
+</main>
+<main class="page" data-view="ranking" hidden>
+  <div class="wrap dash">
+    <div class="dhead">
+      <svg class="sticker" width="56" height="56" aria-hidden="true"><use href="#star"/></svg>
+      <h2>Ranking</h2>
+    </div>
+    <p class="rnote">Gana quien aguante más tiempo. Cuenta el mejor tiempo de cada persona.</p>
+    <div class="rank-grid">
+      <section class="rank" aria-labelledby="h-rc"><h3 id="h-rc">Caballo</h3><div id="rank-c"></div></section>
+      <section class="rank" aria-labelledby="h-rg"><h3 id="h-rg">Colgado</h3><div id="rank-g"></div></section>
     </div>
   </div>
 </main>
@@ -532,15 +600,43 @@ html:not(.locked) #login { display: none; }
   // ---- Voz (anuncia el tiempo) y cronómetro por campo ----
   var voiceOn = store.get('shaoli:voice') !== '0';
   var canSpeak = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
-  function speak(text, queue) {
-    if (!voiceOn || !canSpeak) return;
+  var voiceList = [], uttKeep = [];
+  function loadVoices() { try { voiceList = window.speechSynthesis.getVoices() || []; } catch (e) { voiceList = []; } }
+  function esVoice() {
+    var pref = ['es-MX', 'es-US', 'es-419', 'es-ES'], i, k;
+    for (i = 0; i < pref.length; i++) for (k = 0; k < voiceList.length; k++) if ((voiceList[k].lang || '').replace('_', '-') === pref[i]) return voiceList[k];
+    for (k = 0; k < voiceList.length; k++) if (/^es/i.test(voiceList[k].lang || '')) return voiceList[k];
+    return null;
+  }
+  if (canSpeak) {
+    loadVoices();
+    try { window.speechSynthesis.addEventListener('voiceschanged', loadVoices); } catch (e) { try { window.speechSynthesis.onvoiceschanged = loadVoices; } catch (e2) {} }
+  }
+  function voiceHint() {
+    if (!canSpeak) return 'Este navegador no puede hablar. Prueba con Chrome o Safari actualizado.';
+    loadVoices();
+    var v = esVoice();
+    return (v ? 'Voz: ' + v.name + ' (' + v.lang + '). ' : 'No encuentro una voz en español; se usará la del sistema. ') +
+      'Si no oyes nada: sube el volumen y, en iPhone, quita el modo silencio.';
+  }
+  function speak(text, queue, force) {
+    if ((!voiceOn && !force) || !canSpeak) return;
     try {
       var ss = window.speechSynthesis;
-      if (queue) { if (ss.speaking && ss.pending) return; } else ss.cancel();
-      var u = new SpeechSynthesisUtterance(text); u.lang = 'es-MX'; u.rate = 1.05;
-      ss.speak(u);
+      if (ss.paused) ss.resume();
+      var busy = ss.speaking || ss.pending;
+      if (queue && ss.pending) return;
+      var u = new SpeechSynthesisUtterance(text), v = esVoice();
+      if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'es-MX';
+      u.rate = 1.12; u.pitch = 1.2; u.volume = 1;
+      uttKeep.push(u);
+      u.onend = u.onerror = function () { var i = uttKeep.indexOf(u); if (i > -1) uttKeep.splice(i, 1); };
+      if (!queue && busy) { ss.cancel(); setTimeout(function () { ss.speak(u); }, 60); } else ss.speak(u);
     } catch (e) {}
   }
+  var CHEER = ['¡Vamos, tú puedes!', '¡Muy bien, sigue así!', '¡Fuerte, no te rindes!', '¡Excelente, aguanta!', '¡Eso es, lo estás logrando!', '¡Qué bien lo haces!'];
+  var cheerI = 0;
+  function cheer() { return CHEER[cheerI++ % CHEER.length]; }
   function countWord(s) {
     if (s < 60) return String(s);
     if (s % 60 === 0) return (s / 60) + (s === 60 ? ' minuto' : ' minutos');
@@ -571,7 +667,9 @@ html:not(.locked) #login { display: none; }
         '<div class="tm-row"><label for="tm-goal">Meta</label><input id="tm-goal" type="text" inputmode="numeric" placeholder="1:00" autocomplete="off"></div>' +
         '<div class="tm-row tm-voice"><label><input id="tm-voice" type="checkbox"> Voz</label>' +
           '<label for="tm-every">Contar</label>' +
+          '<button type="button" id="tm-test" class="tm-test">Probar voz</button>' +
           '<select id="tm-every"><option value="0">no contar</option><option value="1">cada segundo</option><option value="5">cada 5 s</option><option value="10">cada 10 s</option><option value="30">cada 30 s</option></select></div>' +
+        '<p class="tm-hint" id="tm-hint"></p>' +
         '<div class="tm-actions"><button type="button" id="tm-go" class="tm-primary">Comenzar</button><button type="button" id="tm-cancel" class="tm-ghost">Cancelar</button></div>' +
       '</div>';
     document.body.appendChild(d);
@@ -580,11 +678,12 @@ html:not(.locked) #login { display: none; }
     q('tm-go').addEventListener('click', function () { if (!TM) return; if (TM.running) tmStop(); else tmBegin(); });
     q('tm-cancel').addEventListener('click', function () { closeTimer(); });
     q('tm-x').addEventListener('click', function () { closeTimer(); });
+    q('tm-test').addEventListener('click', function () { q('tm-hint').textContent = voiceHint(); speak('¡Hola! Soy la voz del cronómetro. ¡Vamos, tú puedes!', false, true); });
     q('tm-voice').addEventListener('change', function () {
       voiceOn = q('tm-voice').checked; store.set('shaoli:voice', voiceOn ? '1' : '0');
       var vb2 = document.getElementById('voice');
       if (vb2) { vb2.textContent = 'Voz: ' + (voiceOn ? 'sí' : 'no'); vb2.setAttribute('aria-pressed', voiceOn ? 'true' : 'false'); }
-      if (voiceOn) speak('Voz activada'); else { try { window.speechSynthesis.cancel(); } catch (e) {} }
+      if (voiceOn) speak('¡Voz activada! ¡Vamos!'); else { try { window.speechSynthesis.cancel(); } catch (e) {} }
     });
     timeInput(q('tm-goal'));
     q('tm-goal').addEventListener('input', function () { maskTime(q('tm-goal')); });
@@ -620,6 +719,7 @@ html:not(.locked) #login { display: none; }
       ? 'Sugerencia: supera tu mejor marca (' + fmt(ctx.best) + ') y llega a ' + fmt(goal) + '.'
       : 'Sugerencia para empezar: ' + fmt(goal) + '. Cambia la meta si quieres.';
     g('tm-voice').checked = voiceOn;
+    g('tm-hint').textContent = voiceHint();
     g('tm-every').value = store.get('shaoli:every') || '1';
     g('tm-go').textContent = 'Comenzar';
     g('tm-go').disabled = false;
@@ -627,7 +727,7 @@ html:not(.locked) #login { display: none; }
     tmEl.hidden = false;
     document.addEventListener('keydown', tmKeys);
     g('tm-go').focus();
-    speak('Iniciaste');
+    speak('¡Iniciaste! ¡Tú puedes!');
   }
   function tmBegin() {
     var g = function (id) { return document.getElementById(id); };
@@ -639,7 +739,7 @@ html:not(.locked) #login { display: none; }
       if (TM !== t) return;
       if (n > 0) {
         g('tm-time').textContent = String(n);
-        speak(['', 'Uno', 'Dos', 'Tres'][n]);
+        speak(['', '¡Uno!', '¡Dos!', '¡Tres!'][n]);
         n--; t.cd = setTimeout(step, 1000);
       } else { tmEl.classList.remove('count'); tmRun(); }
     };
@@ -651,19 +751,28 @@ html:not(.locked) #login { display: none; }
     g('tm-time').textContent = '0:00';
     g('tm-go').disabled = false; g('tm-go').textContent = 'Parar y guardar'; g('tm-go').classList.add('stop');
     g('tm-go').focus();
-    speak('Ya');
+    speak('¡Ya! ¡Vamos!');
     TM.iv = setInterval(function () {
       if (!TM) return;
       var el = (Date.now() - TM.t0) / 1000, goal = parse(g('tm-goal').value);
       g('tm-time').textContent = fmt(el);
       if (goal) {
         g('tm-fill').style.width = Math.min(100, el / goal * 100) + '%';
-        if (!TM.hit && el >= goal) { TM.hit = true; tmEl.classList.add('hit'); speak('Llegaste a la meta'); }
+        if (!TM.half && el >= goal * 0.5 && el < goal * 0.8) { TM.half = true; TM.quiet = Date.now() + 2500; speak('¡Ya vas por la mitad! ¡Sigue así!'); }
+        if (!TM.near && el >= goal * 0.8 && el < goal) { TM.near = true; TM.quiet = Date.now() + 2500; speak('¡Casi llegas! ¡Tú puedes!'); }
+        if (!TM.hit && el >= goal) { TM.hit = true; TM.quiet = Date.now() + 3000; tmEl.classList.add('hit'); speak('¡Llegaste a la meta! ¡Increíble!'); }
       }
       var every = parseInt(g('tm-every').value, 10) || 0;
       if (every) {
         var n = Math.floor(el / every);
-        if (n > TM.said) { TM.said = n; speak(every === 1 ? countWord(n) : spoken(n * every), every === 1); }
+        if (n > TM.said) {
+          TM.said = n;
+          if (Date.now() >= (TM.quiet || 0)) {
+            var word = every === 1 ? countWord(n) : spoken(n * every);
+            if (every === 1 && n % 10 !== 0) speak(word, true);
+            else speak(word + '. ' + cheer());
+          }
+        }
       }
     }, 200);
   }
@@ -673,7 +782,8 @@ html:not(.locked) #login { display: none; }
     if (t.inp) t.inp.value = fmt(t.att[t.k]);
     t.save(); t.redraw();
     closeTimer();
-    setTimeout(function () { speak('Tiempo: ' + spoken(el)); }, 80);
+    var record = t.best != null && el > t.best;
+    setTimeout(function () { speak((record ? '¡Nuevo récord personal! ' : '¡Excelente trabajo! ') + 'Tiempo: ' + spoken(el) + '.'); }, 80);
   }
   function closeTimer() {
     if (!TM) return;
@@ -944,6 +1054,52 @@ html:not(.locked) #login { display: none; }
       lineChart(el('dash-ch-' + ex.k), series, maxDays, ex.name);
     });
   };
+  // ---- Ranking: gana quien hizo más tiempo ----
+  var RANK_EX = [{ k: 'c', name: 'Caballo' }, { k: 'g', name: 'Colgado' }];
+  function fullShort(s) { var p = dateParts(s); return p ? p.d + '/' + p.m + '<span class="yy">/' + String(p.y).slice(-2) + '</span>' : '–'; }
+  var drawRanking = function () {
+    RANK_EX.forEach(function (ex) {
+      var box = el('rank-' + ex.k); if (!box) return;
+      var rows = ORDER.map(function (p) {
+        var r = REG[p.k], best = null, date = null, n = 0;
+        if (r) r.list().forEach(function (day) {
+          day.a.forEach(function (a, m) {
+            var t = a[ex.k]; if (t == null || (m > 0 && a.x !== ex.k)) return;
+            n++;
+            if (best == null || t > best || (t === best && day.d < date)) { best = t; date = day.d; }
+          });
+        });
+        return { p: p, best: best, date: date, n: n };
+      });
+      rows.sort(function (a, b) {
+        if (a.best == null && b.best == null) return 0;
+        if (a.best == null) return 1;
+        if (b.best == null) return -1;
+        if (b.best !== a.best) return b.best - a.best;
+        return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0);
+      });
+      var top = rows[0].best, place = 0, html = '';
+      rows.forEach(function (r, i) {
+        if (r.best != null && (i === 0 || r.best !== rows[i - 1].best)) place = i + 1;
+        var win = r.best != null && r.best === top;
+        var pct = r.best != null && top ? Math.max(4, Math.round(r.best / top * 100)) : 0;
+        html += '<tr' + (win ? ' class="win"' : '') + '>' +
+          '<td class="rp">' + (r.best == null ? '–' : (win ? '<svg class="crown" width="22" height="22" aria-hidden="true"><use href="#star"/></svg><span class="sr">Ganador, lugar </span>' : '') + place) + '</td>' +
+          '<td class="rname"><i class="dsw" style="--pc:' + r.p.c + '"></i>' + r.p.n + '</td>' +
+          '<td class="rt-time">' + (r.best == null ? '<span class="rnone">sin tiempo</span>' : '<b>' + fmt(r.best) + '</b><i class="rbar" style="width:' + pct + '%"></i>') + '</td>' +
+          '<td class="rdate">' + (r.date ? fullShort(r.date) : '–') + '</td>' +
+          '<td class="rn">' + r.n + '</td></tr>';
+      });
+      var winners = rows.filter(function (r) { return r.best != null && r.best === top; });
+      var msg = top == null ? 'Aún nadie tiene tiempo de ' + ex.name.toLowerCase() + '.'
+        : winners.length > 1 ? 'Empate: ' + winners.map(function (w) { return w.p.n; }).join(' y ') + ' con ' + fmt(top) + '.'
+        : 'Va ganando ' + winners[0].p.n + ' con ' + fmt(top) + '.';
+      box.innerHTML = '<p class="rwin">' + msg + '</p>' +
+        '<div class="rwrap"><table class="rt"><caption class="sr">Ranking de ' + ex.name.toLowerCase() + ', gana el tiempo más largo</caption>' +
+        '<thead><tr><th scope="col">Lugar</th><th scope="col">Nombre</th><th scope="col">Mejor<span class="hm"> tiempo</span></th><th scope="col">Fecha</th><th scope="col" class="rn">Intentos</th></tr></thead>' +
+        '<tbody>' + html + '</tbody></table></div>';
+    });
+  };
   (function () {
     var add = el('dash-add'); if (!add) return;
     add.addEventListener('click', function () {
@@ -966,7 +1122,7 @@ html:not(.locked) #login { display: none; }
       refreshVoice();
       vb.addEventListener('click', function () {
         voiceOn = !voiceOn; store.set('shaoli:voice', voiceOn ? '1' : '0'); refreshVoice();
-        if (voiceOn) speak('Voz activada'); else { try { window.speechSynthesis.cancel(); } catch (e) {} }
+        if (voiceOn) speak('¡Voz activada! ¡Vamos!'); else { try { window.speechSynthesis.cancel(); } catch (e) {} }
       });
     }
   }
@@ -996,6 +1152,7 @@ html:not(.locked) #login { display: none; }
     views.forEach(function (v) { v.hidden = v.dataset.view !== h; });
     links.forEach(function (a) { if (a.dataset.link === h) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     if (h === 'dashboard') drawDash();
+    if (h === 'ranking') drawRanking();
     if (REG[h]) REG[h].redraw();
     window.scrollTo(0, 0);
   }
