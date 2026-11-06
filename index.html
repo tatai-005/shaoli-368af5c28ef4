@@ -757,27 +757,42 @@ html:not(.locked) #login { display: none; }
   }
   function tmRun() {
     var g = function (id) { return document.getElementById(id); };
-    TM.running = true; TM.t0 = Date.now();
+    TM.running = true; TM.t0 = Date.now(); TM.told = {};
     g('tm-time').textContent = '0:00';
     g('tm-go').disabled = false; g('tm-go').textContent = 'Parar y guardar'; g('tm-go').classList.add('stop');
     g('tm-go').focus();
-    speak('¡Ya! ¡Vamos!');
+    var gl = parse(g('tm-goal').value);
+    speak(gl ? '¡Ya! Tu meta es ' + spoken(gl) + '. ¡Vamos!' : '¡Ya! ¡Vamos!');
     TM.iv = setInterval(function () {
       if (!TM) return;
       var el = (Date.now() - TM.t0) / 1000, goal = parse(g('tm-goal').value);
       g('tm-time').textContent = fmt(el);
+      var said = false;
+      var say = function (text, quietMs) { speak(text); said = true; if (quietMs) TM.quiet = Date.now() + quietMs; };
+      var finale = false;
       if (goal) {
         g('tm-fill').style.width = Math.min(100, el / goal * 100) + '%';
-        if (!TM.half && el >= goal * 0.5 && el < goal * 0.8) { TM.half = true; TM.quiet = Date.now() + 2500; speak('¡Ya vas por la mitad! ¡Sigue así!'); }
-        if (!TM.near && el >= goal * 0.8 && el < goal) { TM.near = true; TM.quiet = Date.now() + 2500; speak('¡Casi llegas! ¡Tú puedes!'); }
-        if (!TM.hit && el >= goal) { TM.hit = true; TM.quiet = Date.now() + 3000; tmEl.classList.add('hit'); speak('¡Llegaste a la meta! ¡Increíble!'); }
+        var left = Math.ceil(goal - el);
+        if (!TM.hit && el >= goal) {
+          TM.hit = true; tmEl.classList.add('hit');
+          say('¡Llegaste a la meta! ¡Increíble!', 3000);
+        } else if (!TM.hit) {
+          finale = left <= 10 && left >= 1;
+          var LEFT = { 60: '¡Te falta un minuto!', 30: '¡Te faltan treinta segundos!', 20: '¡Te faltan veinte segundos!', 10: '¡Te faltan diez segundos! ¡Tú puedes!', 5: '¡Te faltan cinco!', 4: '¡Cuatro!', 3: '¡Tres!', 2: '¡Dos!', 1: '¡Uno!' };
+          if (LEFT[left] && left < goal && !TM.told[left]) { TM.told[left] = true; say(LEFT[left], 900); }
+          else if (!TM.half && el >= goal * 0.5 && left > 12) { TM.half = true; say('¡Ya vas por la mitad! ¡Sigue así!', 2500); }
+          else if (!TM.near && el >= goal * 0.8 && left > 12) { TM.near = true; say('¡Casi llegas! ¡Tú puedes!', 2500); }
+        } else {
+          var extra = Math.floor(el - goal);
+          if (extra > 0 && extra % 10 === 0 && TM.extra !== extra) { TM.extra = extra; say('¡Ya van ' + extra + ' segundos de más! ¡Sigue así!', 1500); }
+        }
       }
       var every = parseInt(g('tm-every').value, 10) || 0;
       if (every) {
         var n = Math.floor(el / every);
         if (n > TM.said) {
           TM.said = n;
-          if (Date.now() >= (TM.quiet || 0)) {
+          if (!said && !finale && Date.now() >= (TM.quiet || 0)) {
             var word = every === 1 ? countWord(n) : spoken(n * every);
             if (every === 1 && n % 10 !== 0) speak(word, true);
             else speak(word + '. ' + cheer());
@@ -792,8 +807,13 @@ html:not(.locked) #login { display: none; }
     if (t.inp) t.inp.value = fmt(t.att[t.k]);
     t.save(); t.redraw();
     closeTimer();
-    var record = t.best != null && el > t.best;
-    setTimeout(function () { speak((record ? '¡Nuevo récord personal! ' : '¡Excelente trabajo! ') + 'Tiempo: ' + spoken(el) + '.'); }, 80);
+    var msg = '¡Excelente trabajo! ';
+    if (t.best != null) {
+      var diff = Math.round(Math.abs(el - t.best));
+      if (el > t.best) msg = '¡Nuevo récord personal! Superaste tu marca ' + (diff < 1 ? 'por muy poquito. ' : 'por ' + spoken(diff) + '. ');
+      else msg = '¡Buen trabajo! ' + (diff < 1 ? 'Te faltó muy poquito para tu mejor marca. ' : 'Te faltaron ' + spoken(diff) + ' para tu mejor marca. ');
+    }
+    setTimeout(function () { speak(msg + 'Tiempo: ' + spoken(el) + '.'); }, 80);
   }
   function closeTimer() {
     if (!TM) return;
